@@ -51,6 +51,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     movement_control/main.cpp
     movement_control/src/timer.cpp
+    movement_control/src/timer_manager.cpp
 )
 
 # Add include paths

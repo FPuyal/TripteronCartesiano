@@ -1,29 +1,27 @@
 #include "gpio.h"
-#include "timer.h"
-#include "tim.h"
+#include "timer_manager.h"
 
 extern "C" void SystemClock_Config(void);
 extern "C" void MX_GPIO_Init(void);
+
+using enum TimerId;
 
 int main(){
 
     SystemClock_Config();
     MX_GPIO_Init();
 
-    MX_TIM2_Init();
+    TimerManager& timMan = TimerManager::GetInstance();
+    timMan.InitTimers();
 
-    using enum TimerId;
-
-    Timer tim(&htim2, TIM_CHANNEL_1, TimerId::GPIOA0);
-
-    if(tim.Start()) {
-        tim.SetFrecuency(2000);
+    if(timMan.GetTimer(GPIOA0)->Start()) {
+        timMan.GetTimer(GPIOA0)->SetFrecuency(2000);
         HAL_Delay(1000);
-        tim.SetFrecuency(3000);
+        timMan.GetTimer(GPIOA0)->SetFrecuency(100);
         HAL_Delay(1000);
-        tim.SetFrecuency(300);
+        timMan.GetTimer(GPIOA0)->SetFrecuency(4000);
         HAL_Delay(1000);
-        tim.Stop();
+        timMan.GetTimer(GPIOA0)->Stop();
     }
 
     while(1){
