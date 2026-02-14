@@ -50,11 +50,14 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     movement_control/main.cpp
+    movement_control/src/timer.cpp
+    movement_control/src/timer_manager.cpp
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    movement_control/inc
 )
 
 # Add project symbols (macros)
