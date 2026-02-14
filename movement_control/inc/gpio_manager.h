@@ -2,19 +2,20 @@
 
 #include <cstdint>
 #include <locale>
+#include <map>
 #include <memory>
-#include <vector>
 #include <set>
 #include "gpio_wrapper.h"
 
 class GPIOManager {
 public:
     static GPIOManager& GetInstance();
-    void InitGPIOs();
+    bool InitGPIOs();
     std::shared_ptr<GPIO> GetGPIO(GPIOId id);
 private:
     GPIOManager() = default;
-    std::vector<std::shared_ptr<GPIO>> mGPIOs;
+    bool AddGPIO(GPIOId id, GPIO_TypeDef* gpiox, uint16_t pin);
+    std::map<GPIOId, std::shared_ptr<GPIO>> mGPIOsMap;
 };
 
 

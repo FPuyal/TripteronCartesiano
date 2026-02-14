@@ -4,7 +4,6 @@
 #include "utils.h"
 
 extern "C" void SystemClock_Config(void);
-extern "C" void MX_GPIO_Init(void);
 
 using enum TimerId;
 using enum GPIOId;
@@ -12,7 +11,6 @@ using enum GPIOId;
 int main(){
 
     SystemClock_Config();
-    MX_GPIO_Init();
 
     TimerManager& timMan = TimerManager::GetInstance();
     timMan.InitTimers();
