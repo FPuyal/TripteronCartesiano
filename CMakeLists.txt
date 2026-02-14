@@ -53,6 +53,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     movement_control/src/timer.cpp
     movement_control/src/timer_manager.cpp
     movement_control/src/gpio_wrapper.cpp
+    movement_control/src/gpio_manager.cpp
 )
 
 # Add include paths
