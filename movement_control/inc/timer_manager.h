@@ -2,19 +2,20 @@
 
 #include <cstdint>
 #include <locale>
+#include <map>
 #include <memory>
-#include <vector>
 #include <set>
 #include "Timer.h"
 
 class TimerManager {
 public:
     static TimerManager& GetInstance();
-    void InitTimers();
+    bool InitTimers();
     std::shared_ptr<Timer> GetTimer(TimerId id);
 private:
     TimerManager() = default;
-    std::vector<std::shared_ptr<Timer>> mTimers;
+    bool AddTimer(TimerId id, TIM_HandleTypeDef* htim, uint16_t channel);
+    std::map<TimerId, std::shared_ptr<Timer>> mTimersMap;
 };
 
 
