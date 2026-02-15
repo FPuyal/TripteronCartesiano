@@ -1,6 +1,5 @@
 #pragma once
 
-#include "utils.h"
 #include "stm32f407xx.h"
 
 class GPIO {

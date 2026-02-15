@@ -2,7 +2,6 @@
 
 #include "stm32f4xx_hal.h"
 #include <string>
-#include "utils.h"
 
 class Timer {
 public:

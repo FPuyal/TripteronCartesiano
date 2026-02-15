@@ -11,3 +11,14 @@ enum class GPIOId {
     GPIOA2
 };
 
+enum class TMCId {
+    TMCX,
+    TMCY,
+    TMCZ
+};
+
+struct TMCConfig {
+    TimerId stepId;
+    GPIOId dirId;
+    GPIOId enId;
+};

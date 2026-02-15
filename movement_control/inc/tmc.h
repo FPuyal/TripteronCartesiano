@@ -1,3 +1,5 @@
+#pragma once
+
 #include "timer.h"
 #include "gpio_wrapper.h"
 #include <memory>
