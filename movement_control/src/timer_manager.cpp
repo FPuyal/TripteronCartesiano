@@ -22,7 +22,6 @@ bool TimerManager::AddTimer(TimerId id, TIM_HandleTypeDef* htim, uint16_t channe
     return inserted; // Devuelve true si se insertó correctamente, false si ya existía un Timer con ese ID
 }
 
-
 std::shared_ptr<Timer> TimerManager::GetTimer(TimerId id) {
     auto it = mTimersMap.find(id);
     if (it != mTimersMap.end()) {
