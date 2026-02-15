@@ -6,6 +6,7 @@
 #include <memory>
 #include <set>
 #include "gpio_wrapper.h"
+#include "utils.h"
 
 class GPIOManager {
 public:

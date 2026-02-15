@@ -1,7 +1,6 @@
 #include "gpio_manager.h"
-#include "gpio_wrapper.h"
 #include "timer_manager.h"
-#include "utils.h"
+#include "tmc_manager.h"
 
 extern "C" void SystemClock_Config(void);
 
@@ -18,20 +17,26 @@ int main(){
     GPIOManager& gpioMan = GPIOManager::GetInstance();
     gpioMan.InitGPIOs();
 
-    gpioMan.GetGPIO(GPIOA1)->Set();
+    TMCManager& tmcMan = TMCManager::GetInstance();
+    tmcMan.InitTMCs();
 
-    if(timMan.GetTimer(GPIOA0)->Start()) {
-        timMan.GetTimer(GPIOA0)->SetFrecuency(2000);
+    auto tmc = tmcMan.GetTMC(TMCId::TMCX);
+
+    tmc->SetDirection(true);
+
+    if(tmc->Enable()){
+        HAL_Delay(2000);
+        tmc->SetSpeed(2000);
         HAL_Delay(1000);
-        gpioMan.GetGPIO(GPIOA1)->Toggle();
+        tmc->ToggleDirection();
         HAL_Delay(1000);
-        timMan.GetTimer(GPIOA0)->SetFrecuency(4000);
+        tmc->SetSpeed(4000);
         HAL_Delay(1000);
-        gpioMan.GetGPIO(GPIOA1)->Toggle();
+        tmc->ToggleDirection();
         HAL_Delay(1000);
-        gpioMan.GetGPIO(GPIOA1)->Reset();
+        tmc->SetDirection(false);
         HAL_Delay(1000);
-        timMan.GetTimer(GPIOA0)->Stop();
+        tmc->Disable();
     }
 
     while(1){

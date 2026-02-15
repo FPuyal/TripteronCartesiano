@@ -11,6 +11,8 @@ bool Timer::Stop(){
 }
 
 void Timer::SetFrecuency(uint32_t freq){
+    if(freq == 0)
+        freq = 1; // Evitamos división por cero
     if(freq > 5000)
         freq = 5000; // Limitamos a 5 kHz para evitar problemas de resolución
 
