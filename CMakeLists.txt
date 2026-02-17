@@ -50,18 +50,21 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     movement_control/main.cpp
-    movement_control/src/timer.cpp
-    movement_control/src/timer_manager.cpp
-    movement_control/src/gpio_wrapper.cpp
-    movement_control/src/gpio_manager.cpp
-    movement_control/src/tmc.cpp
-    movement_control/src/tmc_manager.cpp
+    movement_control/src/timer/timer.cpp
+    movement_control/src/timer/timer_manager.cpp
+    movement_control/src/gpio/gpio_wrapper.cpp
+    movement_control/src/gpio/gpio_manager.cpp
+    movement_control/src/tmc/tmc.cpp
+    movement_control/src/tmc/tmc_manager.cpp
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     movement_control/inc
+    movement_control/inc/gpio
+    movement_control/inc/timer
+    movement_control/inc/tmc
 )
 
 # Add project symbols (macros)
