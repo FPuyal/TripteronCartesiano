@@ -1,36 +1,37 @@
-#include "gpio_manager.h"
 #include "gpio.h" // Tiene que ser exclusivo de este .cpp
-#include "gpio_wrapper.h"
-#include "main.h"
-#include "stm32f407xx.h"
-#include "utils.h"
-#include <cassert>
+#include "stm32f4xx_hal.h"
+#include "gpio_manager.h"
 
-using enum GPIOId;
-
-GPIOManager& GPIOManager::GetInstance(){
-    static GPIOManager instance;
-    return instance;
+GpioManager::GpioManager(std::vector<GpioInfo> gpioInfos) {
+    if (!InitGpios(gpioInfos)) {
+        // Manejar el error de inicialización
+    }
 }
 
-bool GPIOManager::InitGPIOs() {
+bool GpioManager::InitGpios(std::vector<GpioInfo> gpioInfos) {
     // Aquí se inicializan los GPIOs y se agregan a la lista
     MX_GPIO_Init();
-    return (
-        AddGPIO(GPIOA1, GPIOA, DIR_Pin) &&
-        AddGPIO(GPIOA2, GPIOA, EN_Pin)
-    );
+    for (const auto& gpioInfo : gpioInfos) {
+        if (!SetGpio(gpioInfo)) {
+            return false; // Si alguno falla, se devuelve false
+        }
+    }
+    return true;
 }
 
-bool GPIOManager::AddGPIO(GPIOId id, GPIO_TypeDef* gpiox, uint16_t pin) {
-    auto [it, inserted] = mGPIOsMap.emplace(id, std::make_shared<GPIO>(gpiox, pin));
+bool GpioManager::SetGpio(GpioInfo gpioInfo) {
+    auto [it, inserted] = mGpiosMap.emplace(gpioInfo.id, MakeIGpioWrapper(gpioInfo.gpiox, gpioInfo.pin));
     return inserted; // Devuelve true si se insertó correctamente, false si ya existía un GPIO con ese ID
 }
 
-std::shared_ptr<GPIO> GPIOManager::GetGPIO(GPIOId id) {
-    auto it = mGPIOsMap.find(id);
-    if (it != mGPIOsMap.end()) {
+std::shared_ptr<IGpioWrapper> GpioManager::GetGpio(GpioId id) {
+    auto it = mGpiosMap.find(id);
+    if (it != mGpiosMap.end()) {
         return it->second;
     }
     return nullptr; // No se encontró el GPIO con el ID solicitado
+}
+
+std::shared_ptr<IGpioManager> MakeIGpioManager(std::vector<GpioInfo> gpioInfos) {
+    return std::make_shared<GpioManager>(gpioInfos);
 }

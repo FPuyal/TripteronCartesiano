@@ -1,20 +1,19 @@
 #pragma once
 
-#include "timer.h"
-#include "gpio_wrapper.h"
+#include "tmc_interface.h"
 #include <memory>
 
-class TMC {
+class Tmc : public ITmc {
 public:
-    TMC(std::shared_ptr<Timer> step, std::shared_ptr<GPIO> dir, std::shared_ptr<GPIO> en)
+    Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioWrapper> dir, std::shared_ptr<IGpioWrapper> en)
         : mStep(step), mDir(dir), mEn(en) {}
-    bool Enable();
-    bool Disable();
-    void SetDirection(bool dir);
-    void ToggleDirection();
-    void SetSpeed(uint32_t freq);
+    bool Enable() override;
+    bool Disable() override;
+    void SetDirection(bool dir) override;
+    void ToggleDirection() override;
+    void SetSpeed(uint32_t freq) override;
 private:
-    std::shared_ptr<Timer> mStep;
-    std::shared_ptr<GPIO> mDir;
-    std::shared_ptr<GPIO> mEn;
+    std::shared_ptr<ITimer> mStep;
+    std::shared_ptr<IGpioWrapper> mDir;
+    std::shared_ptr<IGpioWrapper> mEn;
 };

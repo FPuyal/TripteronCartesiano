@@ -1,31 +1,39 @@
 #include "timer_manager.h"
-#include "main.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h" // Tiene que ser exclusivo de este .cpp
-#include "utils.h"
-#include <cassert>
+#include "timer_interface.h"
+#include <memory>
 
-using enum TimerId;
-
-TimerManager& TimerManager::GetInstance(){
-    static TimerManager instance;
-    return instance;
+TimerManager::TimerManager(std::vector<TimerInfo> timersInfos) {
+    if (!InitTimers(timersInfos)) {
+        // Manejar el error de inicialización, por ejemplo, lanzando una excepción o registrando un error
+    }
 }
 
-bool TimerManager::InitTimers() {
+bool TimerManager::InitTimers(std::vector<TimerInfo> timersInfos) {
     // Aquí se inicializan los timers y se agregan a la lista
     MX_TIM2_Init();
-    return AddTimer(GPIOA0, &htim2, TIM_CHANNEL_1);
+    for (const auto& timerInfo : timersInfos) {
+        if (!SetTimer(timerInfo)) {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool TimerManager::AddTimer(TimerId id, TIM_HandleTypeDef* htim, uint16_t channel) {
-    auto [it, inserted] = mTimersMap.emplace(id, std::make_shared<Timer>(htim, channel));
+bool TimerManager::SetTimer(TimerInfo timerInfo) {
+    auto [it, inserted] = mTimersMap.emplace(timerInfo.id, MakeITimer(timerInfo.htim, timerInfo.channel));
     return inserted; // Devuelve true si se insertó correctamente, false si ya existía un Timer con ese ID
 }
 
-std::shared_ptr<Timer> TimerManager::GetTimer(TimerId id) {
+std::shared_ptr<ITimer> TimerManager::GetTimer(TimerId id) {
     auto it = mTimersMap.find(id);
     if (it != mTimersMap.end()) {
         return it->second;
     }
     return nullptr; // No se encontró el Timer con el ID solicitado
+}
+
+std::shared_ptr<ITimerManager> MakeITimerManager(std::vector<TimerInfo> timersInfos){
+    return std::make_shared<TimerManager>(timersInfos);
 }

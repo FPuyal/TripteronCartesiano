@@ -1,22 +1,16 @@
 #pragma once
 
-#include <cstdint>
-#include <locale>
 #include <map>
-#include <memory>
-#include <set>
-#include "gpio_wrapper.h"
-#include "utils.h"
+#include "gpio_manager_interface.h"
 
-class GPIOManager {
+class GpioManager : public IGpioManager {
 public:
-    static GPIOManager& GetInstance();
-    bool InitGPIOs();
-    std::shared_ptr<GPIO> GetGPIO(GPIOId id);
+    GpioManager(std::vector<GpioInfo> gpioInfos);
+    std::shared_ptr<IGpioWrapper> GetGpio(GpioId id) override;
 private:
-    GPIOManager() = default;
-    bool AddGPIO(GPIOId id, GPIO_TypeDef* gpiox, uint16_t pin);
-    std::map<GPIOId, std::shared_ptr<GPIO>> mGPIOsMap;
+    bool InitGpios(std::vector<GpioInfo> gpioInfos);
+    bool SetGpio(GpioInfo gpioInfo);
+    std::map<GpioId, std::shared_ptr<IGpioWrapper>> mGpiosMap;
 };
 
 

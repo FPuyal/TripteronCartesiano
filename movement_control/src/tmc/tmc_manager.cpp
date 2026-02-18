@@ -1,36 +1,30 @@
 #include "tmc_manager.h"
-#include "timer_manager.h"
-#include "gpio_manager.h"
-#include "utils.h"
+#include "config.h"
+#include "tmc_interface.h"
 #include <memory>
 
-TMCManager& TMCManager::GetInstance() {
-    static TMCManager instance;
-    return instance;
+TmcManager::TmcManager(std::vector<TmcInfo> tmcInfos) {
+    if (!InitTmcs(tmcInfos)) {
+        // Manejar error de inicialización
+    }
 }
 
-bool TMCManager::InitTMCs() {
+bool TmcManager::InitTmcs(std::vector<TmcInfo> tmcInfos) {
     // Aquí se inicializan los TMCs y se agregan a la lista
-    TimerManager& timMan = TimerManager::GetInstance();
-    GPIOManager& gpioMan = GPIOManager::GetInstance();
-
-    SetupTMCConfig();
-
-    for (const auto& [id, config] : mTMCConfigMap) {
-        auto step = timMan.GetTimer(config.stepId);
-        auto dir = gpioMan.GetGPIO(config.dirId);
-        auto en = gpioMan.GetGPIO(config.enId);
-        if (!(step && dir && en) ) {
-            return false; // Error al obtener los recursos necesarios
-        }
-        if (!AddTMC(id, step, dir, en)) {
-            return false; // Error al agregar el TMC
+    for (const auto& info : tmcInfos) {
+        if (!SetTmc(info)) {
+            return false; // Error al configurar un TMC
         }
     }
     return true;
 }
 
-std::shared_ptr<TMC> TMCManager::GetTMC(TMCId id) {
+bool TmcManager::SetTmc(TmcInfo info) {
+    auto [it, inserted] = mTMCMap.emplace(info.id, MakeITmc(info.timer, info.dir, info.en));
+    return inserted; // Devuelve true si se insertó correctamente, false si ya existía un TMC con ese ID
+}
+
+std::shared_ptr<ITmc> TmcManager::GetTmc(TmcId id) {
     auto it = mTMCMap.find(id);
     if (it != mTMCMap.end()) {
         return it->second;
@@ -38,17 +32,7 @@ std::shared_ptr<TMC> TMCManager::GetTMC(TMCId id) {
     return nullptr;
 }
 
-bool TMCManager::AddTMC(TMCId id, std::shared_ptr<Timer> step, std::shared_ptr<GPIO> dir, std::shared_ptr<GPIO> en) {
-    if (mTMCMap.find(id) != mTMCMap.end()) {
-        return false; // TMC con ese ID ya existe
-    }
-    mTMCMap[id] = std::make_shared<TMC>(step, dir, en);
-    return true;
+std::shared_ptr<ITmcManager> MakeITmcManager(std::vector<TmcInfo> tmcInfos) {
+    return std::make_shared<TmcManager>(tmcInfos);
 }
 
-void TMCManager::SetupTMCConfig() {
-    // Aquí se configuran los TMCs con sus respectivos timers y GPIOs a través de los ID definidos en utils.h
-    mTMCConfigMap[TMCId::TMCX] = {TimerId::GPIOA0, GPIOId::GPIOA1, GPIOId::GPIOA2};
-    // mTMCConfigMap[TMCId::TMCY] = {TimerId::GPIOB5, GPIOId::GPIOA1, GPIOId::GPIOA2};
-    // mTMCConfigMap[TMCId::TMCZ] = {TimerId::GPIOC6, GPIOId::GPIOA1, GPIOId::GPIOA2};
-}

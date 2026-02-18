@@ -10,7 +10,7 @@ bool Timer::Stop(){
     return true;
 }
 
-void Timer::SetFrecuency(uint32_t freq){
+void Timer::SetFrequency(uint32_t freq){
     if(freq == 0)
         freq = 1; // Evitamos división por cero
     if(freq > 5000)
@@ -27,4 +27,8 @@ void Timer::SetFrecuency(uint32_t freq){
 
     __HAL_TIM_SET_AUTORELOAD(mHtim, arr);
     __HAL_TIM_SET_COMPARE(mHtim, mChannel, arr / 2);  // 50%
+}
+
+std::shared_ptr<ITimer> MakeITimer(TIM_HandleTypeDef *htim, uint32_t channel) {
+    return std::make_shared<Timer>(htim, channel);
 }

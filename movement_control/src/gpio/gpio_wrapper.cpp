@@ -1,15 +1,20 @@
 #include "gpio_wrapper.h"
 #include "stm32f4xx_hal.h"
+#include <memory>
 
-void GPIO::Set() {
+void GpioWrapper::Set() {
     HAL_GPIO_WritePin(mGPIOx, mPin, GPIO_PIN_SET);
 }
 
-void GPIO::Reset() {
+void GpioWrapper::Reset() {
     HAL_GPIO_WritePin(mGPIOx, mPin, GPIO_PIN_RESET);
 }
 
-void GPIO::Toggle() {
+void GpioWrapper::Toggle() {
     HAL_GPIO_TogglePin(mGPIOx, mPin);
+}
+
+std::shared_ptr<IGpioWrapper> MakeIGpioWrapper(GPIO_TypeDef *gpiox, uint16_t pin) {
+    return std::make_shared<GpioWrapper>(gpiox, pin);
 }
 

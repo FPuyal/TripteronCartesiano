@@ -1,13 +1,13 @@
 #pragma once
 
-#include "stm32f407xx.h"
+#include "gpio_wrapper_interface.h"
 
-class GPIO {
+class GpioWrapper : public IGpioWrapper {
 public:
-    GPIO(GPIO_TypeDef *gpiox, uint16_t pin) : mGPIOx(gpiox), mPin(pin) {}
-    void Set();
-    void Reset();
-    void Toggle();
+    GpioWrapper(GPIO_TypeDef *gpiox, uint16_t pin) : mGPIOx(gpiox), mPin(pin) {}
+    void Set() override;
+    void Reset() override;
+    void Toggle() override;
 private:
     GPIO_TypeDef* mGPIOx;
     uint16_t mPin;

@@ -1,23 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <locale>
 #include <map>
-#include <memory>
-#include <set>
-#include "Timer.h"
-#include "utils.h"
+#include "timer_manager_interface.h"
 
-class TimerManager {
+class TimerManager : public ITimerManager {
 public:
-    static TimerManager& GetInstance();
-    bool InitTimers();
-    std::shared_ptr<Timer> GetTimer(TimerId id);
+    TimerManager(std::vector<TimerInfo> timersInfos);
+    std::shared_ptr<ITimer> GetTimer(TimerId id) override;
 private:
-    TimerManager() = default;
-    bool AddTimer(TimerId id, TIM_HandleTypeDef* htim, uint16_t channel);
-    std::map<TimerId, std::shared_ptr<Timer>> mTimersMap;
+    bool InitTimers(std::vector<TimerInfo> timersInfos);
+    bool SetTimer(TimerInfo timerInfo);
+    std::map<TimerId, std::shared_ptr<ITimer>> mTimersMap;
 };
-
-
-
