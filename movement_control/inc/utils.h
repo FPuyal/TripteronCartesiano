@@ -12,13 +12,14 @@ enum class GpioId {
 };
 
 enum class TimerId {
-    STEP_TMCX,  // Para TIM2_CH1 en PA0
+    STEP_TMCX  // Para TIM2_CH1 en PA0
 };
 
 enum class TmcId {
-    TMCX,
+    TMCX = 0,
     TMCY,
-    TMCZ
+    TMCZ,
+    COUNT
 };
 
 struct GpioInfo {
