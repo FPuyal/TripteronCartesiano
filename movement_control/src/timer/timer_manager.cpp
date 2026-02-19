@@ -1,6 +1,5 @@
 #include "timer_manager.h"
 #include "stm32f4xx_hal.h"
-#include "tim.h" // Tiene que ser exclusivo de este .cpp
 
 #include <memory>
 
@@ -12,7 +11,6 @@ TimerManager::TimerManager(std::vector<TimerInfo> timersInfos) {
 
 bool TimerManager::InitTimers(std::vector<TimerInfo> timersInfos) {
     // Aquí se inicializan los timers y se agregan a la lista
-    MX_TIM2_Init();
     for (const auto& timerInfo : timersInfos) {
         if (!SetTimer(timerInfo)) {
             return false;

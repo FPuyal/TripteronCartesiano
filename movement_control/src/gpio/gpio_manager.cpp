@@ -1,4 +1,3 @@
-#include "gpio.h" // Tiene que ser exclusivo de este .cpp
 #include "stm32f4xx_hal.h"
 #include "gpio_manager.h"
 
@@ -10,7 +9,6 @@ GpioManager::GpioManager(std::vector<GpioInfo> gpioInfos) {
 
 bool GpioManager::InitGpios(std::vector<GpioInfo> gpioInfos) {
     // Aquí se inicializan los GPIOs y se agregan a la lista
-    MX_GPIO_Init();
     for (const auto& gpioInfo : gpioInfos) {
         if (!SetGpio(gpioInfo)) {
             return false; // Si alguno falla, se devuelve false
