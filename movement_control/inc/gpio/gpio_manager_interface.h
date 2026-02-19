@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
 #include "gpio_wrapper_interface.h"
-#include "config.h"
+#include "utils.h"
+
+#include <vector>
 
 class IGpioManager {
 public:

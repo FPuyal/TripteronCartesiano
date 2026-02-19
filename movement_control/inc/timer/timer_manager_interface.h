@@ -1,9 +1,10 @@
 #pragma once
 
+#include "timer_interface.h"
+#include "utils.h"
+
 #include <memory>
 #include <vector>
-#include "timer_interface.h"
-#include "config.h"
 
 class ITimerManager {
 public:

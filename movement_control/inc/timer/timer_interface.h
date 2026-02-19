@@ -1,7 +1,8 @@
 #pragma once
 
-#include <memory>
 #include "stm32f4xx_hal.h"
+
+#include <memory>
 
 class ITimer {
 public:

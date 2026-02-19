@@ -1,7 +1,7 @@
 #include "timer_manager.h"
 #include "stm32f4xx_hal.h"
 #include "tim.h" // Tiene que ser exclusivo de este .cpp
-#include "timer_interface.h"
+
 #include <memory>
 
 TimerManager::TimerManager(std::vector<TimerInfo> timersInfos) {

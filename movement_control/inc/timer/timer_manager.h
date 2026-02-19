@@ -1,7 +1,8 @@
 #pragma once
 
-#include <map>
 #include "timer_manager_interface.h"
+
+#include <map>
 
 class TimerManager : public ITimerManager {
 public:

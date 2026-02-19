@@ -1,6 +1,5 @@
 #include "tmc_manager.h"
-#include "config.h"
-#include "tmc_interface.h"
+
 #include <memory>
 
 TmcManager::TmcManager(std::vector<TmcInfo> tmcInfos) {

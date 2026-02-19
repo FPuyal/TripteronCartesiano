@@ -1,9 +1,10 @@
 #pragma once
 
+#include "tmc_interface.h"
+#include "utils.h"
+
 #include <memory>
 #include <vector>
-#include "tmc_interface.h"
-#include "config.h"
 
 class ITmcManager {
 public:

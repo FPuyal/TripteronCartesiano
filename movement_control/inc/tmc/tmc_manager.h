@@ -1,11 +1,11 @@
 #pragma once
 
+#include "tmc_interface.h"
+#include "tmc_manager_interface.h"
+
 #include <map>
 #include <memory>
 #include <vector>
-#include "config.h"
-#include "tmc_interface.h"
-#include "tmc_manager_interface.h"
 
 class TmcManager :public ITmcManager {
 public:

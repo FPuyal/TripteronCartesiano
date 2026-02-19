@@ -1,8 +1,9 @@
 #pragma once
 
-#include <memory>
 #include "timer_interface.h"
-#include "gpio_Wrapper_interface.h"
+#include "gpio_wrapper_interface.h"
+
+#include <memory>
 
 class ITmc {
 public:

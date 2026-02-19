@@ -36,6 +36,6 @@ struct TimerInfo {
 struct TmcInfo {
     TmcId id;
     std::shared_ptr<ITimer> timer;
-    std::shared_ptr<IGpioWrapper> dir;
     std::shared_ptr<IGpioWrapper> en;
+    std::shared_ptr<IGpioWrapper> dir;
 };

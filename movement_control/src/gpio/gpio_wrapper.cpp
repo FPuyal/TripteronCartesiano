@@ -1,5 +1,6 @@
 #include "gpio_wrapper.h"
 #include "stm32f4xx_hal.h"
+
 #include <memory>
 
 void GpioWrapper::Set() {

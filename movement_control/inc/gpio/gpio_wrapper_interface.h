@@ -1,7 +1,8 @@
 #pragma once
 
-#include <memory>
 #include "stm32f407xx.h"
+
+#include <memory>
 
 class IGpioWrapper {
 public:

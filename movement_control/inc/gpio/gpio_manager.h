@@ -1,7 +1,8 @@
 #pragma once
 
-#include <map>
 #include "gpio_manager_interface.h"
+
+#include <map>
 
 class GpioManager : public IGpioManager {
 public:
