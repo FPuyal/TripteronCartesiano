@@ -57,6 +57,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     movement_control/src/tmc/tmc.cpp
     movement_control/src/tmc/tmc_manager.cpp
     movement_control/src/hardware_manager/hardware_manager.cpp
+    movement_control/src/i2c/i2c_wrapper.cpp
 )
 
 # Add include paths
@@ -67,6 +68,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     movement_control/inc/timer
     movement_control/inc/tmc
     movement_control/inc/hardware_manager
+    movement_control/inc/i2c
 )
 
 # Add project symbols (macros)

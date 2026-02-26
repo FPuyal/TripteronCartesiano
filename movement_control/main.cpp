@@ -4,10 +4,15 @@
 
 #include "i2c.h"
 
+#include "i2c_wrapper_interface.h"
+#include "stm32f4xx_hal_i2c.h"
+
 extern "C" void SystemClock_Config(void);
 
 #define AS5600_ADDR (0x36 << 1)
-#define AS5600_ANGLE_REG 0x0E
+#define AS5600_RAW_ANGLE 0x0C
+#define AS5600_ANGLE 0x0E
+#define ZPOS_H 0x01
 
 int main(){
 
@@ -16,41 +21,28 @@ int main(){
     MX_GPIO_Init();
     MX_I2C2_Init();   // <<< Inicializa I2C2
 
-    uint16_t angle_raw = 0;
-    uint16_t init_angle_raw = 0;
-    int angle;
-    uint8_t buffer[2];
+    std::shared_ptr<II2CWrapper> i2cWrapper = MakeII2CWrapper(&hi2c2, AS5600_ADDR);
+
+    uint16_t init_raw_angle = 0;
+    uint16_t raw_angle = 0;
+    double angle;
+
+    i2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
+    i2cWrapper->Read(init_raw_angle);
+    i2cWrapper->SetMemAddress(ZPOS_H);
+    bool escritura = i2cWrapper->Write(init_raw_angle);
+
+    i2cWrapper->SetMemAddress(AS5600_ANGLE);
+
+    HAL_Delay(1);  // prueba más rápida (~1 kHz)
 
     while (1) {
-        if (HAL_I2C_Mem_Read(&hi2c2,
-                         AS5600_ADDR,
-                         AS5600_ANGLE_REG,
-                         I2C_MEMADD_SIZE_8BIT,
-                         buffer,
-                         2,
-                         10) == HAL_OK)
-        {
-            init_angle_raw = ((uint16_t)buffer[0] << 8) | buffer[1];
-            init_angle_raw &= 0x0FFF;
-        }
+
+        i2cWrapper->Read(raw_angle);
 
         HAL_Delay(1);  // prueba más rápida (~1 kHz)
 
-        if (HAL_I2C_Mem_Read(&hi2c2,
-                         AS5600_ADDR,
-                         AS5600_ANGLE_REG,
-                         I2C_MEMADD_SIZE_8BIT,
-                         buffer,
-                         2,
-                         10) == HAL_OK)
-        {
-            angle_raw = ((uint16_t)buffer[0] << 8) | buffer[1];
-            angle_raw &= 0x0FFF;
-        }
-
-        HAL_Delay(1);  // prueba más rápida (~1 kHz)
-
-        angle = ((int)(angle_raw) - (int)(init_angle_raw))*360 / 4096;
+        angle = 360 - ((double)(raw_angle)) * 360 / 4096;
 
     }
 
