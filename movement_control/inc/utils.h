@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stm32f407xx.h"
 #include <memory>
 #include "gpio_wrapper_interface.h"
 #include "timer_interface.h"
@@ -22,6 +21,12 @@ enum class TmcId {
     COUNT
 };
 
+enum class I2cId {
+    I2CX,
+    I2CY,
+    I2CZ
+};
+
 struct GpioInfo {
     GpioId id;
     GPIO_TypeDef* gpiox;
@@ -39,4 +44,10 @@ struct TmcInfo {
     std::shared_ptr<ITimer> timer;
     std::shared_ptr<IGpioWrapper> en;
     std::shared_ptr<IGpioWrapper> dir;
+};
+
+struct I2CInfo {
+    I2cId id;
+    I2C_HandleTypeDef* hi2c;
+    uint16_t devAddress;
 };

@@ -1,11 +1,11 @@
 #include "gpio.h"
-#include "hardware_manager_interface.h"
+#include "i2c_wrapper_interface.h"
 #include "stm32f4xx_hal.h"
 
 #include "i2c.h"
 
-#include "i2c_wrapper_interface.h"
-#include "stm32f4xx_hal_i2c.h"
+#include "i2c_manager_interface.h"
+#include <memory>
 
 extern "C" void SystemClock_Config(void);
 
@@ -21,24 +21,26 @@ int main(){
     MX_GPIO_Init();
     MX_I2C2_Init();   // <<< Inicializa I2C2
 
-    std::shared_ptr<II2CWrapper> i2cWrapper = MakeII2CWrapper(&hi2c2, AS5600_ADDR);
+    std::shared_ptr<II2CManager> i2cManager = MakeII2CManager({{I2cId::I2CX,&hi2c2, AS5600_ADDR}});
+
+    std::shared_ptr<II2CWrapper> i2cX = i2cManager->GetI2C(I2cId::I2CX);
 
     uint16_t init_raw_angle = 0;
     uint16_t raw_angle = 0;
     double angle;
 
-    i2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
-    i2cWrapper->Read(init_raw_angle);
-    i2cWrapper->SetMemAddress(ZPOS_H);
-    bool escritura = i2cWrapper->Write(init_raw_angle);
+    i2cX->SetMemAddress(AS5600_RAW_ANGLE);
+    i2cX->Read(init_raw_angle);
+    i2cX->SetMemAddress(ZPOS_H);
+    bool escritura = i2cX->Write(init_raw_angle);  
 
-    i2cWrapper->SetMemAddress(AS5600_ANGLE);
+    i2cX->SetMemAddress(AS5600_ANGLE);
 
     HAL_Delay(1);  // prueba más rápida (~1 kHz)
 
     while (1) {
 
-        i2cWrapper->Read(raw_angle);
+        i2cX->Read(raw_angle);
 
         HAL_Delay(1);  // prueba más rápida (~1 kHz)
 
