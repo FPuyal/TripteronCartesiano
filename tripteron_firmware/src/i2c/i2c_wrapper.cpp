@@ -6,6 +6,8 @@ bool I2CWrapper::Read(uint16_t& raw_value) {
 
     uint8_t buffer[2];
 
+    // HAL_StatusTypeDef lectura = HAL_I2C_Mem_Read(mHi2c, mDevAddress, mMemAddress, I2C_MEMADD_SIZE_8BIT, buffer, 2, 10);
+
     if (HAL_I2C_Mem_Read(mHi2c, mDevAddress, mMemAddress, I2C_MEMADD_SIZE_8BIT, buffer, 2, 10) == HAL_OK){
         raw_value = ((uint16_t)buffer[0] << 8) | buffer[1];
         raw_value &= 0x0FFF;

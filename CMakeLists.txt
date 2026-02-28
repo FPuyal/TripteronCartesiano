@@ -49,27 +49,29 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    movement_control/main.cpp
-    movement_control/src/timer/timer.cpp
-    movement_control/src/timer/timer_manager.cpp
-    movement_control/src/gpio/gpio_wrapper.cpp
-    movement_control/src/gpio/gpio_manager.cpp
-    movement_control/src/tmc/tmc.cpp
-    movement_control/src/tmc/tmc_manager.cpp
-    movement_control/src/hardware_manager/hardware_manager.cpp
-    movement_control/src/i2c/i2c_wrapper.cpp
-    movement_control/src/i2c/i2c_manager.cpp
+    tripteron_firmware/main.cpp
+    tripteron_firmware/src/timer/timer.cpp
+    tripteron_firmware/src/timer/timer_manager.cpp
+    tripteron_firmware/src/gpio/gpio_wrapper.cpp
+    tripteron_firmware/src/gpio/gpio_manager.cpp
+    tripteron_firmware/src/tmc/tmc.cpp
+    tripteron_firmware/src/tmc/tmc_manager.cpp
+    tripteron_firmware/src/hardware_manager/hardware_manager.cpp
+    tripteron_firmware/src/i2c/i2c_wrapper.cpp
+    tripteron_firmware/src/i2c/i2c_manager.cpp
+    tripteron_firmware/src/encoder/encoder.cpp
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    movement_control/inc
-    movement_control/inc/gpio
-    movement_control/inc/timer
-    movement_control/inc/tmc
-    movement_control/inc/hardware_manager
-    movement_control/inc/i2c
+    tripteron_firmware/inc
+    tripteron_firmware/inc/gpio
+    tripteron_firmware/inc/timer
+    tripteron_firmware/inc/tmc
+    tripteron_firmware/inc/hardware_manager
+    tripteron_firmware/inc/i2c
+    tripteron_firmware/inc/encoder
 )
 
 # Add project symbols (macros)
