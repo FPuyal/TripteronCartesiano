@@ -30,9 +30,10 @@ enum class I2cId {
 };
 
 enum class EncoderId {
-    EncoderX,
+    EncoderX = 0,
     EncoderY,
-    EncoderZ
+    EncoderZ,
+    COUNT
 };
 
 struct GpioInfo {
