@@ -1,4 +1,4 @@
-#include "encoder_interface.h"
+#include "encoder_manager_interface.h"
 #include "gpio.h"
 #include "stm32f4xx_hal.h"
 
@@ -19,26 +19,22 @@ int main(){
     MX_GPIO_Init();
     MX_I2C2_Init();   // <<< Inicializa I2C2
 
-    std::shared_ptr<II2CManager> i2cManager = MakeII2CManager({{I2cId::I2CX,&hi2c2, AS5600_ADDR}});
+    std::shared_ptr<II2CManager> i2cMan = MakeII2CManager({{I2cId::I2CX,&hi2c2, AS5600_ADDR}});
 
-    std::shared_ptr<IEncoder> encX = MakeIEncoder(i2cManager->GetI2C(I2cId::I2CX));
+    std::shared_ptr<IEncoderManager> encMan = MakeIEncoderManager({{EncoderId::EncoderX, i2cMan->GetI2C(I2cId::I2CX)}});
 
-    uint16_t raw_angle = 0;
+    std::shared_ptr<IEncoder> encX = encMan->GetEncoder(EncoderId::EncoderX);
+
     double angle;
-    double angle_aux;
     bool lectura;
 
     encX->SetOffset();
 
     while (1) {
 
-        lectura = encX->ReadAngle(raw_angle);
+        lectura = encX->ReadAngle(angle);
 
         HAL_Delay(1);  // prueba más rápida (~1 kHz)
-
-        angle_aux = 360 - ((double)(raw_angle)) * 360.0 / 4096.0;
-        angle = angle_aux == 360 ? 0 : angle_aux;
-
     }
 
 }

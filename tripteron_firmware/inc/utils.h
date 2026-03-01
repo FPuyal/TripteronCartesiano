@@ -1,9 +1,11 @@
 #pragma once
 
 #include <memory>
+
 #include "gpio_wrapper_interface.h"
 #include "timer_interface.h"
 #include "tmc_interface.h"
+#include "i2c_wrapper_interface.h"
 
 enum class GpioId {
     DIR_TMCX,
@@ -25,6 +27,12 @@ enum class I2cId {
     I2CX,
     I2CY,
     I2CZ
+};
+
+enum class EncoderId {
+    EncoderX,
+    EncoderY,
+    EncoderZ
 };
 
 struct GpioInfo {
@@ -50,4 +58,9 @@ struct I2CInfo {
     I2cId id;
     I2C_HandleTypeDef* hi2c;
     uint16_t devAddress;
+};
+
+struct EncoderInfo {
+    EncoderId id;
+    std::shared_ptr<II2CWrapper> i2c;
 };

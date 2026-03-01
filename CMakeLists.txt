@@ -60,6 +60,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/src/i2c/i2c_wrapper.cpp
     tripteron_firmware/src/i2c/i2c_manager.cpp
     tripteron_firmware/src/encoder/encoder.cpp
+    tripteron_firmware/src/encoder/encoder_manager.cpp
 )
 
 # Add include paths

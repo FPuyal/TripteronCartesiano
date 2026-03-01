@@ -1,4 +1,5 @@
 #include "encoder.h"
+#include <cstdint>
 #include <memory>
 
 #define AS5600_RAW_ANGLE 0x0C
@@ -17,9 +18,16 @@ bool Encoder::SetOffset(){
     return true;
 }
 
-bool Encoder::ReadAngle(uint16_t& angle){
+bool Encoder::ReadAngle(double& angle){
+    uint16_t raw_angle = 0;
+
     mI2cWrapper->SetMemAddress(AS5600_ANGLE);
-    return mI2cWrapper->Read(angle);
+    if(mI2cWrapper->Read(raw_angle)) {
+        angle = (raw_angle == 0) ? (360.0 / 4096.0) :
+            360.0 - raw_angle * 360.0 / 4096.0;
+        return true;
+    }
+    return false;
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {

@@ -1,7 +1,7 @@
 #include "i2c_wrapper.h"
 
 bool I2CWrapper::Read(uint16_t& raw_value) {
-    if(mMemAddress == 0)
+    if(!mMemAddress)
         return false;
 
     uint8_t buffer[2];
@@ -12,9 +12,8 @@ bool I2CWrapper::Read(uint16_t& raw_value) {
         raw_value = ((uint16_t)buffer[0] << 8) | buffer[1];
         raw_value &= 0x0FFF;
         return true;
-    } else {
-        return false;
     }
+    return false ;
 }
 
 bool I2CWrapper::Write(uint16_t raw_value) {
@@ -26,7 +25,7 @@ bool I2CWrapper::Write(uint16_t raw_value) {
     buffer[1] = raw_value & 0xFF;        // LSB
 
     return HAL_I2C_Mem_Write(mHi2c, mDevAddress, mMemAddress,
-                             I2C_MEMADD_SIZE_8BIT, buffer, 2, 100) == HAL_OK;
+                             I2C_MEMADD_SIZE_8BIT, buffer, 2, 2) == HAL_OK;
 }
 
 void I2CWrapper::SetMemAddress(uint8_t addr){

@@ -10,7 +10,7 @@
 class TmcManager :public ITmcManager {
 public:
     TmcManager(std::vector<TmcInfo> tmcInfos);
-    std::shared_ptr<ITmc> GetTmc(TmcId id);
+    std::shared_ptr<ITmc> GetTmc(TmcId id) override;
 private:
     bool InitTmcs(std::vector<TmcInfo> tmcInfos);
     bool SetTmc(TmcInfo info);

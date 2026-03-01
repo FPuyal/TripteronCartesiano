@@ -7,7 +7,7 @@ public:
     Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) :
         mI2cWrapper(i2cWrapper) {}
     bool SetOffset() override;
-    bool ReadAngle(uint16_t& angle) override;
+    bool ReadAngle(double& angle) override;
 private:
     std::shared_ptr<II2CWrapper> mI2cWrapper;
 };
