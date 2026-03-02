@@ -51,16 +51,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     tripteron_firmware/main.cpp
     tripteron_firmware/src/timer/timer.cpp
-    tripteron_firmware/src/timer/timer_manager.cpp
     tripteron_firmware/src/gpio/gpio_wrapper.cpp
-    tripteron_firmware/src/gpio/gpio_manager.cpp
     tripteron_firmware/src/tmc/tmc.cpp
-    tripteron_firmware/src/tmc/tmc_manager.cpp
     tripteron_firmware/src/hardware_manager/hardware_manager.cpp
     tripteron_firmware/src/i2c/i2c_wrapper.cpp
-    tripteron_firmware/src/i2c/i2c_manager.cpp
     tripteron_firmware/src/encoder/encoder.cpp
-    tripteron_firmware/src/encoder/encoder_manager.cpp
+    tripteron_firmware/src/hardware_manager/make_managers.cpp
 )
 
 # Add include paths

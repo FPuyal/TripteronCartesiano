@@ -55,7 +55,7 @@ struct TmcInfo {
     std::shared_ptr<IGpioWrapper> dir;
 };
 
-struct I2CInfo {
+struct I2cInfo {
     I2cId id;
     I2C_HandleTypeDef* hi2c;
     uint16_t devAddress;

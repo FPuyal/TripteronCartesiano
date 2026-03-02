@@ -40,7 +40,7 @@ void HardwareManager::InitHardware() {
 
     mTmcManager = MakeITmcManager(tmcsInfo);
 
-    std::vector<I2CInfo> i2csInfos = {
+    std::vector<I2cInfo> i2csInfos = {
         {I2cId::I2CX, &hi2c2, AS5600_ADDR}
     };
 

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "tmc_interface.h"
 #include "tmc_manager_interface.h"
+#include "resource_manager.h"
 
-#include <map>
-#include <memory>
-#include <vector>
-
-class TmcManager :public ITmcManager {
+class TmcManager : public ResourceManager<ITmcManager, ITmc, TmcId, TmcInfo> {
 public:
-    TmcManager(std::vector<TmcInfo> tmcInfos);
-    std::shared_ptr<ITmc> GetTmc(TmcId id) override;
-private:
-    bool InitTmcs(std::vector<TmcInfo> tmcInfos);
-    bool SetTmc(TmcInfo info);
-    std::map<TmcId, std::shared_ptr<ITmc>> mTMCMap;
+    TmcManager(std::vector<TmcInfo> tmcsInfo) : ResourceManager() {
+        InitResources(tmcsInfo);
+    }
+    std::shared_ptr<ITmc> GetTmc(TmcId id) override {
+        return GetResource(id);
+    }
+protected:
+    std::shared_ptr<ITmc> Make(TmcInfo tmcInfo) override {
+        return MakeITmc(tmcInfo.timer, tmcInfo.dir, tmcInfo.en);
+    }
 };
