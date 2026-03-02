@@ -13,6 +13,3 @@ private:
     bool SetGpio(GpioInfo gpioInfo);
     std::map<GpioId, std::shared_ptr<IGpioWrapper>> mGpiosMap;
 };
-
-
-
