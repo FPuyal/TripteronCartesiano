@@ -23,8 +23,7 @@ bool Encoder::ReadAngle(double& angle){
 
     mI2cWrapper->SetMemAddress(AS5600_ANGLE);
     if(mI2cWrapper->Read(raw_angle)) {
-        angle = (raw_angle == 0) ? (360.0 / 4096.0) :
-            360.0 - raw_angle * 360.0 / 4096.0;
+        angle = raw_angle * 360.0 / 4096.0;
         return true;
     }
     return false;

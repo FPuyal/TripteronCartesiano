@@ -1,15 +1,18 @@
 #pragma once
 
 #include "timer_manager_interface.h"
+#include "resource_manager.h"
 
-#include <map>
-
-class TimerManager : public ITimerManager {
+class TimerManager : public ResourceManager<ITimerManager, ITimer, TimerId, TimerInfo> {
 public:
-    TimerManager(std::vector<TimerInfo> timersInfos);
-    std::shared_ptr<ITimer> GetTimer(TimerId id) override;
-private:
-    bool InitTimers(std::vector<TimerInfo> timersInfos);
-    bool SetTimer(TimerInfo timerInfo);
-    std::map<TimerId, std::shared_ptr<ITimer>> mTimersMap;
+    TimerManager(std::vector<TimerInfo> timersInfo) : ResourceManager() {
+        InitResources(timersInfo);
+    }
+    std::shared_ptr<ITimer> GetTimer(TimerId id) override {
+        return GetResource(id);
+    }
+protected:
+    std::shared_ptr<ITimer> Make(TimerInfo timerInfo) override {
+        return MakeITimer(timerInfo.htim, timerInfo.channel);
+    }
 };

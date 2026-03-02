@@ -1,15 +1,20 @@
 #pragma once
 
 #include "gpio_manager_interface.h"
+#include "resource_manager.h"
 
 #include <map>
 
-class GpioManager : public IGpioManager {
+class GpioManager : public ResourceManager<IGpioManager, IGpioWrapper, GpioId, GpioInfo> {
 public:
-    GpioManager(std::vector<GpioInfo> gpioInfos);
-    std::shared_ptr<IGpioWrapper> GetGpio(GpioId id) override;
-private:
-    bool InitGpios(std::vector<GpioInfo> gpioInfos);
-    bool SetGpio(GpioInfo gpioInfo);
-    std::map<GpioId, std::shared_ptr<IGpioWrapper>> mGpiosMap;
+    GpioManager(std::vector<GpioInfo> gpiosInfo) : ResourceManager() {
+        InitResources(gpiosInfo);
+    }
+    std::shared_ptr<IGpioWrapper> GetGpio(GpioId id) override {
+        return GetResource(id);
+    }
+protected:
+    std::shared_ptr<IGpioWrapper> Make(GpioInfo gpioInfo) override {
+        return MakeIGpioWrapper(gpioInfo.gpiox, gpioInfo.pin);
+    }
 };

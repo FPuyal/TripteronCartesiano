@@ -12,5 +12,5 @@ public:
     virtual std::shared_ptr<II2CWrapper> GetI2C(I2cId id) = 0;
 };
 
-std::shared_ptr<II2CManager> MakeII2CManager(std::vector<I2CInfo> i2cInfos);
+std::shared_ptr<II2CManager> MakeII2CManager(std::vector<I2cInfo> i2cInfos);
 

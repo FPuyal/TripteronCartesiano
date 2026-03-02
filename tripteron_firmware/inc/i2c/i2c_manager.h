@@ -1,16 +1,20 @@
 #pragma once
 
 #include "i2c_manager_interface.h"
-#include "i2c_wrapper_interface.h"
+#include "resource_manager.h"
 
 #include <map>
 
-class I2CManager : public II2CManager {
+class I2CManager : public ResourceManager<II2CManager, II2CWrapper, I2cId, I2cInfo> {
 public:
-    I2CManager(std::vector<I2CInfo> i2cInfos);
-    std::shared_ptr<II2CWrapper> GetI2C(I2cId id) override;
-private:
-    bool InitI2Cs(std::vector<I2CInfo> i2cInfos);
-    bool SetI2C(I2CInfo i2cInfo);
-    std::map<I2cId, std::shared_ptr<II2CWrapper>> mI2CsMap;
+    I2CManager(std::vector<I2cInfo> i2csInfo) : ResourceManager() {
+        InitResources(i2csInfo);
+    }
+    std::shared_ptr<II2CWrapper> GetI2C(I2cId id) override {
+        return GetResource(id);
+    }
+protected:
+    std::shared_ptr<II2CWrapper> Make(I2cInfo i2cInfo) override {
+        return MakeII2CWrapper(i2cInfo.hi2c, i2cInfo.devAddress);
+    }
 };
