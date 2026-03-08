@@ -19,9 +19,14 @@ void HardwareManager::InitHardware() {
 
     // Configuración del HW
     std::vector<GpioInfo> gpiosInfo = {
+<<<<<<< HEAD
         {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_0},
         {GpioId::DIR_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_1},
         {GpioId::END_STOP_X, GpioMode::INPUT, GPIOA, GPIO_PIN_4}
+=======
+        {GpioId::EN_TMCX, GPIOA, GPIO_PIN_2},
+        {GpioId::DIR_TMCX, GPIOA, GPIO_PIN_1}
+>>>>>>> 8c847bf (Añadida clase TrayectoryProfile y prueba de concepto del s-curve)
     };
 
     std::vector<TimerInfo> timersInfo = {

@@ -65,9 +65,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/src/hardware_manager/hardware_manager.cpp
     tripteron_firmware/src/i2c/i2c_wrapper.cpp
     tripteron_firmware/src/encoder/encoder.cpp
+<<<<<<< HEAD
     tripteron_firmware/src/hardware_manager/managers_factories.cpp
     tripteron_firmware/src/gpio/gpio_input.cpp
     tripteron_firmware/src/gpio/gpio_output.cpp
+=======
+    tripteron_firmware/src/hardware_manager/make_managers.cpp
+    tripteron_firmware/src/trayectory_profile/trapezoidal_profile.cpp
+>>>>>>> 8c847bf (Añadida clase TrayectoryProfile y prueba de concepto del s-curve)
 )
 
 # Add include paths
@@ -80,6 +85,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/hardware_manager
     tripteron_firmware/inc/i2c
     tripteron_firmware/inc/encoder
+    tripteron_firmware/inc/trayectory_profile
 )
 
 # Add project symbols (macros)
