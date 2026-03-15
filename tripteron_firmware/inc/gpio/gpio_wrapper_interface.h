@@ -1,15 +1,14 @@
 #pragma once
 
-#include "stm32f407xx.h"
+#include "utils.h"
 
+#include "stm32f407xx.h"
 #include <memory>
 
 class IGpioWrapper {
 public:
     virtual ~IGpioWrapper() = default;
-    virtual void Set() = 0;
-    virtual void Reset() = 0;
-    virtual void Toggle() = 0;
+    virtual GpioMode GetMode() = 0;
 };
 
-std::shared_ptr<IGpioWrapper> MakeIGpioWrapper(GPIO_TypeDef *gpiox, uint16_t pin);
+std::shared_ptr<IGpioWrapper> MakeIGpioWrapper(GpioMode mode, GPIO_TypeDef *gpiox, uint16_t pin);

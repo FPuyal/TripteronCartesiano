@@ -1,7 +1,7 @@
 #pragma once
 
 #include "timer_interface.h"
-#include "gpio_wrapper_interface.h"
+#include "gpio_output_interface.h"
 
 #include <memory>
 
@@ -15,4 +15,4 @@ public:
     virtual void SetSpeed(uint32_t freq) = 0;
 };
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioWrapper> dir, std::shared_ptr<IGpioWrapper> en);
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en);

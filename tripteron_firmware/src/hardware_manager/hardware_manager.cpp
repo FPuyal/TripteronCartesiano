@@ -1,9 +1,9 @@
-#include "hardware_manager.h"
-#include "utils.h"
-
 #include "gpio.h" // Tiene que ser exclusivo de este .cpp
 #include "tim.h" // Tiene que ser exclusivo de este .cpp
 #include "i2c.h" // Tiene que ser exclusivo de este .cpp
+#include "hardware_manager.h"
+#include "utils.h"
+
 #include <vector>
 
 #define AS5600_ADDR (0x36 << 1)
@@ -19,8 +19,9 @@ void HardwareManager::InitHardware() {
 
     // Configuración del HW
     std::vector<GpioInfo> gpiosInfo = {
-        {GpioId::EN_TMCX, GPIOA, GPIO_PIN_0},
-        {GpioId::DIR_TMCX, GPIOA, GPIO_PIN_1}
+        {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_0},
+        {GpioId::DIR_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_1},
+        {GpioId::END_STOP_X, GpioMode::INPUT, GPIOA, GPIO_PIN_4}
     };
 
     std::vector<TimerInfo> timersInfo = {
@@ -34,8 +35,8 @@ void HardwareManager::InitHardware() {
     std::vector<TmcInfo> tmcsInfo = {
         {TmcId::TMCX,
             mTimerManager->GetTimer(TimerId::STEP_TMCX),
-            mGpioManager->GetGpio(GpioId::EN_TMCX),
-            mGpioManager->GetGpio(GpioId::DIR_TMCX)}
+            mGpioManager->GetGpioOutput(GpioId::EN_TMCX),
+            mGpioManager->GetGpioOutput(GpioId::DIR_TMCX)}
     };
 
     mTmcManager = MakeITmcManager(tmcsInfo);
@@ -79,6 +80,10 @@ std::map<EncoderId, std::shared_ptr<IEncoder>> HardwareManager::GetEncoders() {
         encoders[static_cast<EncoderId>(i)] = enc;
     }
     return encoders;
+}
+
+std::shared_ptr<IGpioInput> HardwareManager::GetEndStop(GpioId id) {
+    return mGpioManager->GetGpioInput(id);
 }
 
 std::shared_ptr<IHardwareManager> MakeIHardwareManager() {

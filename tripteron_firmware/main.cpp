@@ -5,22 +5,16 @@
 
 int main(){
 
-    double angle;
-    bool lectura;
-
     auto hardwareManager = MakeIHardwareManager();
 
     hardwareManager->InitHardware();
 
-    auto encoders = hardwareManager->GetEncoders();
+    auto endStopX = hardwareManager->GetEndStop(GpioId::END_STOP_X);
 
-    encoders[EncoderId::EncoderX]->SetOffset();
+    bool endStopXValue;
 
     while (1) {
-
-        lectura = encoders[EncoderId::EncoderX]->ReadAngle(angle);
-
-        HAL_Delay(5);
+        endStopXValue = endStopX->Read();
     }
 
 }

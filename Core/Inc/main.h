@@ -63,6 +63,8 @@ void Error_Handler(void);
 #define DIR_GPIO_Port GPIOA
 #define EN_Pin GPIO_PIN_2
 #define EN_GPIO_Port GPIOA
+#define END_STOP_X_Pin GPIO_PIN_4
+#define END_STOP_X_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
