@@ -3,6 +3,7 @@
 #include "hardware_manager_interface.h"
 #include "encoder_manager_interface.h"
 #include "gpio_manager_interface.h"
+#include "gpio_input_interface.h"
 #include "i2c_manager_interface.h"
 #include "timer_manager_interface.h"
 #include "tmc_manager_interface.h"
@@ -14,6 +15,7 @@ public:
     void InitHardware() override;
     std::map<TmcId, std::shared_ptr<ITmc>> GetTmcs() override;
     std::map<EncoderId, std::shared_ptr<IEncoder>> GetEncoders() override;
+    std::shared_ptr<IGpioInput> GetEndStop(GpioId id) override;
 private:
     std::shared_ptr<IGpioManager> mGpioManager;
     std::shared_ptr<ITimerManager> mTimerManager;

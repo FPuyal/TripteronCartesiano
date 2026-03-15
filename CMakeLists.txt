@@ -16,6 +16,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+set(MCU_FLAGS
+    -mcpu=cortex-m4
+    -mthumb
+    -mfpu=fpv4-sp-d16
+    -mfloat-abi=hard
+)
+
+add_compile_options(${MCU_FLAGS})
+add_link_options(${MCU_FLAGS})
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -56,7 +65,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/src/hardware_manager/hardware_manager.cpp
     tripteron_firmware/src/i2c/i2c_wrapper.cpp
     tripteron_firmware/src/encoder/encoder.cpp
-    tripteron_firmware/src/hardware_manager/make_managers.cpp
+    tripteron_firmware/src/hardware_manager/managers_factories.cpp
+    tripteron_firmware/src/gpio/gpio_input.cpp
+    tripteron_firmware/src/gpio/gpio_output.cpp
 )
 
 # Add include paths

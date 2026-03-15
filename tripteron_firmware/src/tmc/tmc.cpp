@@ -24,6 +24,6 @@ void Tmc::SetSpeed(uint32_t freq) {
     mStep->SetFrequency(freq);
 }
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioWrapper> dir, std::shared_ptr<IGpioWrapper> en){
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en){
     return std::make_shared<Tmc>(step, dir, en);
 }
