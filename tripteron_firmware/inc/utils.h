@@ -85,14 +85,3 @@ struct EncoderInfo {
     EncoderId id;
     std::shared_ptr<II2CWrapper> i2c;
 };
-
-struct TrajectoryState {
-    double pos;
-    double vel;
-};
-
-struct TrajectoryConfig {
-    double velMax;
-    double accMax;
-    double jerk;
-};

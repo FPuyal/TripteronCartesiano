@@ -56,24 +56,8 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 # Add sources to executable
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
-    tripteron_firmware/main.cpp
-    tripteron_firmware/src/timer/timer.cpp
-    tripteron_firmware/src/gpio/gpio_wrapper.cpp
-    tripteron_firmware/src/tmc/tmc.cpp
-    tripteron_firmware/src/hardware_manager/hardware_manager.cpp
-    tripteron_firmware/src/i2c/i2c_wrapper.cpp
-    tripteron_firmware/src/encoder/encoder.cpp
-<<<<<<< HEAD
-    tripteron_firmware/src/hardware_manager/managers_factories.cpp
-    tripteron_firmware/src/gpio/gpio_input.cpp
-    tripteron_firmware/src/gpio/gpio_output.cpp
-=======
-    tripteron_firmware/src/hardware_manager/make_managers.cpp
-    tripteron_firmware/src/trayectory_profile/trapezoidal_profile.cpp
->>>>>>> 8c847bf (Añadida clase TrayectoryProfile y prueba de concepto del s-curve)
-)
+file(GLOB_RECURSE USER_SOURCES "tripteron_firmware/*.cpp")
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${USER_SOURCES})
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -85,7 +69,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/hardware_manager
     tripteron_firmware/inc/i2c
     tripteron_firmware/inc/encoder
-    tripteron_firmware/inc/trayectory_profile
+    tripteron_firmware/inc/trajectory_generator
 )
 
 # Add project symbols (macros)

@@ -1,8 +1,9 @@
 #include "hardware_manager_interface.h"
 #include "stm32f4xx_hal.h"
+#include "trajectory_generator_utils.h"
 #include "utils.h"
 
-#include "trayectory_profile_interface.h"
+#include "trajectory_generator_interface.h"
 
 #include <memory>
 
@@ -12,32 +13,33 @@ int main(){
 
     hardwareManager->InitHardware();
 
-<<<<<<< HEAD
-    auto endStopX = hardwareManager->GetEndStop(GpioId::END_STOP_X);
-
-    bool endStopXValue;
-
-    while (1) {
-        endStopXValue = endStopX->Read();
-=======
     auto tmcX = hardwareManager->GetTmcs()[TmcId::TMCX];
     tmcX->Enable();
 
-    TrajectoryConfig config;
-    config.velMax = 5000.0;
-    config.accMax = 10000.0;
-    config.jerk = 10000.0;
+    TrajectoryConfig config {
+        10000.0,
+        8000.0,
+        80000.0
+    };
 
-    auto trajProf = MakeITrajectoryProfile(config);
+    auto trajectoryGenerator = MakeITrajectoryGenerator(config);
 
-    trajProf->SetTrajectorySegment({0.0, 0.0}, {10000.0, 5000.0});
+    MotionState initState {0.0, 0.0};
+    MotionState finalState {10000, config.velMax};
+
+    trajectoryGenerator->SetTrajectoryProfile(initState, finalState);
+
+    int profileType = trajectoryGenerator->GetProfileType();
 
     while (1) {
-        trajProf->Update(0.001f);
-        double vel = trajProf->GetVelocity();
-        tmcX->SetSpeed(vel);
-        HAL_Delay(1);
->>>>>>> 8c847bf (Añadida clase TrayectoryProfile y prueba de concepto del s-curve)
-    }
+        while (!trajectoryGenerator->IsFinished()) {
+            trajectoryGenerator->Update(0.01); // Update every 10 ms
 
+            double velocity = trajectoryGenerator->GetVelocity();
+
+            tmcX->SetSpeed(static_cast<uint32_t>(velocity));
+
+            HAL_Delay(10); // Delay for 10 ms
+        }
+    }
 }
