@@ -36,26 +36,32 @@ int main(){
 
     HAL_StatusTypeDef status;
 
-    // 1. GCONF — StealthChop + control micropasos por UART
-    uint8_t gconf[8] = {0x05, 0x00, 0x80, 0x00, 0x00, 0x00, 0xC0, 0x00};
+    // 1. GCONF — SpreadCycle + control por UART
+    // Cambio: bit2 (en_SpreadCycle) = 1
+    // Valor: 0x000000C4
+    uint8_t gconf[8] = {0x05, 0x00, 0x80, 0x00, 0x00, 0x00, 0xC4, 0x00};
     gconf[7] = tmc_crc8(gconf, 7);
     HAL_UART_Transmit(&huart2, gconf, 8, HAL_MAX_DELAY);
     HAL_Delay(10);
 
-    // 2. IHOLD_IRUN — corriente run 100%, hold 50%
-    uint8_t ihold[8] = {0x05, 0x00, 0x90, 0x00, 0x06, 0x1F, 0x10, 0x00};
+    // 2. IHOLD_IRUN — IRUN=20 (~65%), IHOLD=8, IHOLDDELAY=6
+    // Reduce calentamiento sin sacrificar torque crítico
+    // Valor: 0x00061408
+    uint8_t ihold[8] = {0x05, 0x00, 0x90, 0x00, 0x06, 0x14, 0x08, 0x00};
     ihold[7] = tmc_crc8(ihold, 7);
     HAL_UART_Transmit(&huart2, ihold, 8, HAL_MAX_DELAY);
     HAL_Delay(10);
 
-    // 3. TPOWERDOWN — 2 segundos antes de bajar corriente
+    // 3. TPOWERDOWN — sin cambio
     uint8_t tpdown[8] = {0x05, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14, 0x00};
     tpdown[7] = tmc_crc8(tpdown, 7);
     HAL_UART_Transmit(&huart2, tpdown, 8, HAL_MAX_DELAY);
     HAL_Delay(10);
 
-    // 4. CHOPCONF — 16 micropasos
-    uint8_t chopconf[8] = {0x05, 0x00, 0xEC, 0x14, 0x00, 0x00, 0x53, 0x00};
+    // 4. CHOPCONF — 1/4 micropasos, TBL=1, TOFF=4, HSTRT=4, HEND=1, intpol=1
+    // MRES=6 → 1/4 microsteps
+    // Valor: 0x160080C4
+    uint8_t chopconf[8] = {0x05, 0x00, 0xEC, 0x16, 0x00, 0x80, 0xC4, 0x00};
     chopconf[7] = tmc_crc8(chopconf, 7);
     HAL_UART_Transmit(&huart2, chopconf, 8, HAL_MAX_DELAY);
     HAL_Delay(10);
@@ -64,15 +70,15 @@ int main(){
     tmcX->Enable();
 
     TrajectoryConfig config {
-        19200,
-        3200,
-        32000
-    };
+        12000,
+        1600,
+        16000
+       };
 
     auto trajectoryGenerator = MakeITrajectoryGenerator(config);
 
     MotionState initState {0.0, 0.0};
-    MotionState finalState {160000, 0.0};
+    MotionState finalState {100000, config.velMax};
 
     trajectoryGenerator->SetTrajectoryProfile(initState, finalState);
 
