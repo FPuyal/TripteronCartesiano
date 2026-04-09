@@ -1,4 +1,5 @@
 #include "gpio.h" // Tiene que ser exclusivo de este .cpp
+#include "stm32f4xx_hal_gpio.h"
 #include "tim.h" // Tiene que ser exclusivo de este .cpp
 #include "i2c.h" // Tiene que ser exclusivo de este .cpp
 #include "hardware_manager.h"
@@ -17,9 +18,11 @@ void HardwareManager::InitHardware() {
     MX_TIM2_Init();
     MX_I2C2_Init();
 
-    // Configuración del HW
+    /********************************************************
+    *               Configuración del HW
+    *********************************************************/
     std::vector<GpioInfo> gpiosInfo = {
-        {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_0},
+        {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_2},
         {GpioId::DIR_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_1},
         {GpioId::END_STOP_X, GpioMode::INPUT, GPIOA, GPIO_PIN_4}
     };
@@ -31,7 +34,9 @@ void HardwareManager::InitHardware() {
     mGpioManager = MakeIGpioManager(gpiosInfo);
     mTimerManager = MakeITimerManager(timersInfo);
 
-    // Configuración de los TMCs
+    /********************************************************
+    *               Configuración de los TMCs
+    *********************************************************/
     std::vector<TmcInfo> tmcsInfo = {
         {TmcId::TMCX,
             mTimerManager->GetTimer(TimerId::STEP_TMCX),
@@ -40,6 +45,10 @@ void HardwareManager::InitHardware() {
     };
 
     mTmcManager = MakeITmcManager(tmcsInfo);
+
+    /********************************************************
+    *             Configuración de los Encoders
+    *********************************************************/
 
     std::vector<I2cInfo> i2csInfos = {
         {I2cId::I2CX, &hi2c2, AS5600_ADDR}

@@ -5,8 +5,7 @@
 #include <vector>
 
 // Clase template que existe unicamente para parametrizar la implementación de todos los
-// managers de los recursos que se utilizan. Es una forma de centralizar y parametrizar la
-// implementación de los managers.
+// managers de los recursos que se utilizan.
 
 template <typename IManager, typename IResource, typename ResourceId, typename ResourceInfo>
 class ResourceManager : public IManager {
