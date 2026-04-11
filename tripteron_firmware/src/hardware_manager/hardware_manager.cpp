@@ -1,8 +1,10 @@
+#include "hardware_manager.h"
 #include "gpio.h" // Tiene que ser exclusivo de este .cpp
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "tim.h" // Tiene que ser exclusivo de este .cpp
 #include "i2c.h" // Tiene que ser exclusivo de este .cpp
-#include "hardware_manager.h"
+#include "usart.h"
 #include "utils.h"
 
 #include <vector>
@@ -17,6 +19,8 @@ void HardwareManager::InitHardware() {
     MX_GPIO_Init();
     MX_TIM2_Init();
     MX_I2C2_Init();
+    MX_USART2_UART_Init();
+    HAL_Delay(500);
 
     /********************************************************
     *               Configuración del HW
@@ -31,8 +35,13 @@ void HardwareManager::InitHardware() {
         {TimerId::STEP_TMCX, &htim2, TIM_CHANNEL_1}
     };
 
+    std::vector<UartInfo> uartsInfo = {
+        {UartId::UART2, &huart2}
+    };
+
     mGpioManager = MakeIGpioManager(gpiosInfo);
     mTimerManager = MakeITimerManager(timersInfo);
+    mUartManager = MakeIUartManager(uartsInfo);
 
     /********************************************************
     *               Configuración de los TMCs
@@ -41,7 +50,9 @@ void HardwareManager::InitHardware() {
         {TmcId::TMCX,
             mTimerManager->GetTimer(TimerId::STEP_TMCX),
             mGpioManager->GetGpioOutput(GpioId::EN_TMCX),
-            mGpioManager->GetGpioOutput(GpioId::DIR_TMCX)}
+            mGpioManager->GetGpioOutput(GpioId::DIR_TMCX),
+            mUartManager->GetUart(UartId::UART2),
+            4 }
     };
 
     mTmcManager = MakeITmcManager(tmcsInfo);
