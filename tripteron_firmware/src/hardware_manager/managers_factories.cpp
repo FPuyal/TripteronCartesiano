@@ -7,9 +7,6 @@
 #include "i2c_manager_interface.h"
 #include "i2c_manager.h"
 
-#include "uart_manager_interface.h"
-#include "uart_manager.h"
-
 #include "tmc_manager_interface.h"
 #include "tmc_manager.h"
 
@@ -34,9 +31,5 @@ std::shared_ptr<ITimerManager> MakeITimerManager(std::vector<TimerInfo> timersIn
 
 std::shared_ptr<ITmcManager> MakeITmcManager(std::vector<TmcInfo> tmcsInfo){
     return std::make_shared<TmcManager>(tmcsInfo);
-}
-
-std::shared_ptr<IUartManager> MakeIUartManager(std::vector<UartInfo> uartInfos){
-    return std::make_shared<UartManager>(uartInfos);
 }
 
