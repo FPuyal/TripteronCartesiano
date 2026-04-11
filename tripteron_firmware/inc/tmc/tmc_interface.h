@@ -2,6 +2,7 @@
 
 #include "timer_interface.h"
 #include "gpio_output_interface.h"
+#include "uart_interface.h"
 
 #include <memory>
 
@@ -15,4 +16,4 @@ public:
     virtual void SetSpeed(uint32_t freq) = 0;
 };
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en);
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps);
