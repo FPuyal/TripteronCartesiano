@@ -70,7 +70,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/i2c
     tripteron_firmware/inc/encoder
     tripteron_firmware/inc/trajectory_generator
-    tripteron_firmware/inc/uart
 )
 
 # Add project symbols (macros)
