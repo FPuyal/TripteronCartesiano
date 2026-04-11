@@ -52,7 +52,8 @@ void HardwareManager::InitHardware() {
             mGpioManager->GetGpioOutput(GpioId::EN_TMCX),
             mGpioManager->GetGpioOutput(GpioId::DIR_TMCX),
             mUartManager->GetUart(UartId::UART2),
-            4 }
+            4,
+            0x00 }
     };
 
     mTmcManager = MakeITmcManager(tmcsInfo);

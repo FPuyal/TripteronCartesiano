@@ -1,9 +1,9 @@
 #include "tmc.h"
 #include "usart.h"
 
-Tmc::Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps)
+Tmc::Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps, uint8_t nodeAddr)
     : mStep(step), mDir(dir), mEn(en), mUart(uart) {
-        ConfigureRegisters(microSteps);
+        ConfigureRegisters(microSteps, nodeAddr);
     }
 
 bool Tmc::Enable() {
@@ -46,7 +46,7 @@ static uint8_t tmc_crc8(uint8_t *data, uint8_t len) {
     return crc;
 }
 
-void Tmc::ConfigureRegisters(uint16_t microSteps) {
+void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddr) {
     uint8_t mres;
 
     switch (microSteps) {
@@ -64,7 +64,7 @@ void Tmc::ConfigureRegisters(uint16_t microSteps) {
     // 1. GCONF — SpreadCycle + control por UART
     // Cambio: bit2 (en_SpreadCycle) = 1
     // Valor: 0x000000C4
-    uint8_t gconf[8] = {0x05, 0x00, 0x80, 0x00, 0x00, 0x00, 0xC4, 0x00};
+    uint8_t gconf[8] = {0x05, nodeAddr, 0x80, 0x00, 0x00, 0x00, 0xC4, 0x00};
     gconf[7] = tmc_crc8(gconf, 7);
     mUart->WriteData(gconf);
 
@@ -88,6 +88,6 @@ void Tmc::ConfigureRegisters(uint16_t microSteps) {
     mUart->WriteData(chopconf);
 }
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps) {
-    return std::make_shared<Tmc>(step, dir, en, uart, microSteps);
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps, uint8_t nodeAddr) {
+    return std::make_shared<Tmc>(step, dir, en, uart, microSteps, nodeAddr);
 }

@@ -13,6 +13,6 @@ public:
     }
 protected:
     std::shared_ptr<ITmc> Make(TmcInfo tmcInfo) override {
-        return MakeITmc(tmcInfo.timer, tmcInfo.dir, tmcInfo.en, tmcInfo.uart, tmcInfo.microSteps);
+        return MakeITmc(tmcInfo.timer, tmcInfo.dir, tmcInfo.en, tmcInfo.uart, tmcInfo.microSteps, tmcInfo.nodeAddr);
     }
 };

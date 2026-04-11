@@ -73,6 +73,7 @@ struct TmcInfo {
     std::shared_ptr<IGpioOutput> dir;
     std::shared_ptr<IUart> uart;
     uint16_t microSteps;
+    uint8_t nodeAddr;
 };
 
 enum class I2cId {
