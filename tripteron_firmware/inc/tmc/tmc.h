@@ -12,12 +12,10 @@ public:
     void SetDirection(bool dir) override;
     void ToggleDirection() override;
     void SetSpeed(uint32_t freq) override;
-
 private:
     void ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddr);
 
     std::shared_ptr<ITimer> mStep;
     std::shared_ptr<IGpioOutput> mDir;
     std::shared_ptr<IGpioOutput> mEn;
-    std::shared_ptr<IUart> mUart;
 };

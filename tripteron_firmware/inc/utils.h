@@ -9,7 +9,6 @@ class IGpioOutput;
 class ITimer;
 class ITmc;
 class II2CWrapper;
-class IUart;
 
 enum class GpioId {
     DIR_TMCX,
@@ -48,16 +47,6 @@ struct TimerInfo {
     uint32_t channel;  // TIM_CHANNEL_1, TIM_CHANNEL_2, etc.
 };
 
-enum class UartId {
-    UART1,
-    UART2,
-    UART3
-};
-
-struct UartInfo {
-    UartId id;
-    UART_HandleTypeDef* huart;
-};
 
 enum class TmcId {
     TMCX = 0,

@@ -2,7 +2,6 @@
 
 #include "timer_interface.h"
 #include "gpio_output_interface.h"
-#include "uart_interface.h"
 
 #include <memory>
 
