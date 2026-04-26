@@ -1,4 +1,5 @@
 #include "trajectory_generator.h"
+#include "trajectory_generator_utils.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -31,9 +32,9 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     mPos = mInit.pos;
     mVel = mInit.vel;
     mAcc = 0.0;
-    mJerk = 0.0;
+    // mJerk = 0.0;
 
-    mProfile = TrayectoryProfileType::NONE;
+    // mProfile = TrayectoryProfileType::NONE;
     mPhases.clear();
 
     const double dist = std::abs(mFinal.pos - mInit.pos);
@@ -46,197 +47,110 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
         return GeneratePhases();
     };
 
-    auto fits = [this, dist](double initVel, double finalVel, TrayectoryProfileType profileType) -> bool {
-        const double d = CalculatePartialProfileDistance(initVel, finalVel, mConfig, profileType);
+    auto fits = [this, dist](double initVel, double finalVel) -> bool {
+        const double d = CalculatePartialProfileDistance(initVel, finalVel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
         return d > eps && d <= dist + eps;
     };
 
-    auto fitsCombined = [this, dist](double initVel, double cruiseVel, double finalVel,
-                                          TrayectoryProfileType partialProfile) -> bool {
-        const double d1 = CalculatePartialProfileDistance(initVel, cruiseVel, mConfig, partialProfile);
-        const double d2 = CalculatePartialProfileDistance(cruiseVel, finalVel, mConfig, partialProfile);
+    auto fitsCombined = [this, dist](double initVel, double maxVel, double finalVel) -> bool {
+        const double d1 = CalculatePartialProfileDistance(initVel, maxVel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+        const double d2 = CalculatePartialProfileDistance(maxVel, finalVel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
         return d1 > eps && d2 > eps && (d1 + d2) <= dist + eps;
     };
 
     if (mFinal.vel >= mConfig.velMax - eps) {
         mFinal.vel = mConfig.velMax;
-        if (fits(mInit.vel, mConfig.velMax, TrayectoryProfileType::S_CURVE_PARCIAL))
-            return assignProfile(TrayectoryProfileType::S_CURVE_PARCIAL);
 
-        if (fits(mInit.vel, mConfig.velMax, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL))
-            return assignProfile(TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL);
-
-        if (fits(mInit.vel, mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL))
+        if (fits(mInit.vel, mConfig.velMax))
             return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
 
         return false;
     }
 
-    if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel, TrayectoryProfileType::S_CURVE_PARCIAL))
-        return assignProfile(TrayectoryProfileType::S_CURVE);
-
-    if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL))
-        return assignProfile(TrayectoryProfileType::S_CURVE_TRAPEZOIDAL);
-
-    if (fits(mInit.vel, mFinal.vel, TrayectoryProfileType::S_CURVE_PARCIAL))
-        return assignProfile(TrayectoryProfileType::S_CURVE_PARCIAL);
-
-    if (fits(mInit.vel, mFinal.vel, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL))
-        return assignProfile(TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL);
-
-    if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL))
+    if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRAPEZOIDAL);
 
-    if (fits(mInit.vel, mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL))
+    if (fits(mInit.vel, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+
+    double max_vel_aux = sqrt(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
+    if(fitsCombined(mInit.vel, max_vel_aux, mFinal.vel))
+        return assignProfile(TrayectoryProfileType::TRIANGULAR);
 
     return false;
 }
 
 bool TrajectoryGenerator::GeneratePhases() {
     mPhases.clear();
-    mCurrentPhase = 0;
 
-    auto addPartialProfile = [this](double initVel, double finalVel, TrayectoryProfileType profileType) -> bool {
+    auto addRampProfile = [this](double initVel, double finalVel) -> bool {
         if (initVel < 0.0 || finalVel < 0.0)
             return false;
 
         double accleSign = (finalVel >= initVel) ? 1.0 : -1.0;
-        double aux_vel = 0.0;
 
-        std::vector<TrayectoryPhase> aux_phases;
-
-        aux_phases.push_back(TrayectoryPhase {
-            accleSign * mConfig.jerk,
+        mPhases.push_back(TrayectoryPhase {
             accleSign * mConfig.accMax,
-            0.0,
-            0.0,
-            EndCondition::ACCEL,
-        });
-
-        aux_vel = finalVel - accleSign * (mConfig.accMax * mConfig.accMax) / (2.0 * mConfig.jerk);
-
-        aux_phases.push_back(TrayectoryPhase {
-            0.0,
-            accleSign * mConfig.accMax,
-            aux_vel,
+            finalVel,
             0.0,
             EndCondition::VEL,
         });
 
-        aux_phases.push_back(TrayectoryPhase {
-            -accleSign * mConfig.jerk,
-            0.0,
-            finalVel,
-            0.0,
-            EndCondition::ACCEL,
-        });
-
-        if(profileType != TrayectoryProfileType::S_CURVE_PARCIAL)
-            aux_phases.erase(aux_phases.begin());
-
-        if(profileType == TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) {
-            aux_phases.pop_back();
-            aux_phases.front().velLim = finalVel;
-        }
-
-        mPhases.insert(mPhases.end(), aux_phases.begin(), aux_phases.end());
         return true;
     };
 
     auto addCruisePhase = [this](double cruiseVel, TrayectoryProfileType profileType) -> bool {
-        if (cruiseVel <= eps || profileType == TrayectoryProfileType::NONE)
+        if (cruiseVel <= eps || profileType == TrayectoryProfileType::TRIANGULAR)
             return false;
 
-        double aux_pos = 0.0;
-        double aux_dist = 0.0;
+        double pos_aux = mFinal.pos;
+        double dist_aux = abs(mFinal.pos - mInit.pos);
 
-        if (static_cast<int>(profileType) < 3) {
-            aux_dist = std::abs(mFinal.pos - mInit.pos);
-            aux_dist -= CalculatePartialProfileDistance(mInit.vel, mFinal.vel, mConfig, profileType);
-
-            if (aux_dist < -eps)
-                return false;
-            if (std::abs(aux_dist) > eps) {
-                mPhases.push_back({
-                    0.0,
-                    0.0,
-                    cruiseVel,
-                    mInit.vel < (mFinal.vel - eps) ? mFinal.pos : mInit.pos + aux_dist,
-                    EndCondition::DIST
-                });
-            }
-
-            return true;
+        if(profileType == TrayectoryProfileType::TRAPEZOIDAL) {
+            double decelDist = CalculatePartialProfileDistance(cruiseVel, mFinal.vel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+            dist_aux -= CalculatePartialProfileDistance(mInit.vel, cruiseVel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+            dist_aux -= decelDist;
+            pos_aux  -= decelDist;
         }
-        else {
-            aux_dist = std::abs(mFinal.pos - mInit.pos);
-            aux_pos = CalculatePartialProfileDistance(
-                mInit.vel, mConfig.velMax, mConfig,
-                static_cast<TrayectoryProfileType>(static_cast<int>(profileType) - 3)
-            );
-            aux_dist -= aux_pos;
-            aux_dist -= CalculatePartialProfileDistance(
-                mConfig.velMax, mFinal.vel, mConfig,
-                static_cast<TrayectoryProfileType>(static_cast<int>(profileType) - 3)
-            );
-
-            if (aux_dist < -eps)
-                return false;
-            if (std::abs(aux_dist) > eps){
-                mPhases.push_back({
-                    0.0,
-                    0.0,
-                    mConfig.velMax,
-                    mInit.pos + aux_pos + aux_dist,
-                    EndCondition::DIST
-                });
-            }
-
-            return true;
+        if(profileType == TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) {
+            dist_aux -= mInit.vel <= mFinal.vel ?
+                CalculatePartialProfileDistance(mInit.vel, cruiseVel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) :
+                CalculatePartialProfileDistance(cruiseVel, mFinal.vel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+            pos_aux = mInit.vel <= mFinal.vel ? pos_aux :
+                pos_aux - CalculatePartialProfileDistance(cruiseVel, mFinal.vel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
         }
-    };
 
-    auto addPartialProfileWithCruise = [this, &addPartialProfile, &addCruisePhase]
-        (TrayectoryProfileType partialProfile) -> bool {
-        if (std::abs(mInit.vel - mFinal.vel) < eps)
-            return false;
+        if(dist_aux < eps)
+            return false; // No necesita una fase de crucero.
 
-        if (mInit.vel < mFinal.vel - eps) {
-            return addPartialProfile(mInit.vel, mFinal.vel, partialProfile) &&
-                   addCruisePhase(mFinal.vel, partialProfile);
-        }
-        else {
-            return addCruisePhase(mInit.vel, partialProfile) &&
-                   addPartialProfile(mInit.vel, mFinal.vel, partialProfile);
-        }
+        // Necesita fase de crucero
+        mPhases.push_back({
+            0.0,
+            cruiseVel,
+            pos_aux,
+            EndCondition::DIST
+        });
+
+        return true;
     };
 
     switch (mProfile) {
-        case TrayectoryProfileType::S_CURVE_PARCIAL:
-            return addPartialProfileWithCruise(TrayectoryProfileType::S_CURVE_PARCIAL);
-
-        case TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL:
-            return addPartialProfileWithCruise(TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL);
-
-        case TrayectoryProfileType::TRAPEZOIDAL_PARCIAL:
-            return addPartialProfileWithCruise(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
-
-        case TrayectoryProfileType::S_CURVE:
-            return addPartialProfile(mInit.vel, mConfig.velMax, TrayectoryProfileType::S_CURVE_PARCIAL) &&
-                addCruisePhase(mConfig.velMax, TrayectoryProfileType::S_CURVE) &&
-                addPartialProfile(mConfig.velMax, mFinal.vel, TrayectoryProfileType::S_CURVE_PARCIAL);
-
-        case TrayectoryProfileType::S_CURVE_TRAPEZOIDAL:
-            return addPartialProfile(mInit.vel, mConfig.velMax, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL) &&
-                addCruisePhase(mConfig.velMax, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL) &&
-                addPartialProfile(mConfig.velMax, mFinal.vel, TrayectoryProfileType::S_CURVE_TRAPEZOIDAL_PARCIAL);
-
         case TrayectoryProfileType::TRAPEZOIDAL:
-            return addPartialProfile(mInit.vel, mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) &&
-                addCruisePhase(mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL) &&
-                addPartialProfile(mConfig.velMax, mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
-
+            return addRampProfile(mInit.vel, mConfig.velMax)
+            && addCruisePhase(mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL)
+            && addRampProfile(mConfig.velMax, mFinal.vel);
+        case TrayectoryProfileType::TRAPEZOIDAL_PARCIAL:
+            if(mFinal.vel < mInit.vel - eps)
+                return addCruisePhase(mInit.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) &&
+                    addRampProfile(mInit.vel, mFinal.vel);
+            return addRampProfile(mInit.vel, mFinal.vel) &&
+                addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+        case TrayectoryProfileType::TRIANGULAR : {
+            double dist = abs(mFinal.pos - mInit.pos);
+            double max_vel_aux = sqrt(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
+            return addRampProfile(mInit.vel, max_vel_aux) &&
+                addRampProfile(max_vel_aux, mFinal.vel);
+        }
         default:
             return false;
     }

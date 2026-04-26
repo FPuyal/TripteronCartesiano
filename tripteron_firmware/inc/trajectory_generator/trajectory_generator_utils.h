@@ -10,27 +10,21 @@ struct MotionState {
 struct TrajectoryConfig {
     double velMax;
     double accMax;
-    double jerk;
 };
 
 enum class TrayectoryProfileType {
-    S_CURVE_PARCIAL = 0,
-    S_CURVE_TRAPEZOIDAL_PARCIAL = 1,
-    TRAPEZOIDAL_PARCIAL = 2,
-    S_CURVE,
-    S_CURVE_TRAPEZOIDAL,
+    TRAPEZOIDAL_PARCIAL = 0,
     TRAPEZOIDAL,
+    TRIANGULAR,
     NONE
 };
 
 enum class EndCondition {
-    ACCEL = 0,
-    VEL,
+    VEL = 0,
     DIST
 };
 
 struct TrayectoryPhase {
-    double jerk;
     double accLim;
     double velLim;
     double posLim;

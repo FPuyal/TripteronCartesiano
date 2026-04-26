@@ -34,7 +34,7 @@ private:
     double mPos;
     double mVel;
     double mAcc;
-    double mJerk;
+    // double mJerk;
 
     bool mFinished;
 };
