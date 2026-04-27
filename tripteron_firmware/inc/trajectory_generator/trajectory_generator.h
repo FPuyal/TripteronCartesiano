@@ -10,7 +10,6 @@ public:
     double GetPosition() const override { return mPos; }
     double GetVelocity() const override { return mVel; }
     bool IsFinished() const override { return mFinished; }
-    int GetProfileType() const override { return static_cast<int>(mProfile); }
 
 private:
     bool GeneratePhases();
@@ -23,18 +22,16 @@ private:
     std::vector<TrayectoryPhase> mPhases;
     std::size_t mCurrentPhase = 0;
 
-    // Actual phase varibales
+    // Initial phase variables
     double mPhaseTime = 0.0;
     double mPos0 = 0.0;
     double mVel0 = 0.0;
-    double mAcc0 = 0.0;
 
     // Actual state variables
     double mDir;
     double mPos;
     double mVel;
     double mAcc;
-    // double mJerk;
 
     bool mFinished;
 };

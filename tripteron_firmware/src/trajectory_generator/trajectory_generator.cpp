@@ -120,8 +120,10 @@ bool TrajectoryGenerator::GeneratePhases() {
                 pos_aux - CalculatePartialProfileDistance(cruiseVel, mFinal.vel, mConfig, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
         }
 
-        if(dist_aux < eps)
-            return false; // No necesita una fase de crucero.
+        if (dist_aux < -eps)
+            return false;  // El perfil no cabe
+        if (dist_aux <  eps)
+            return true;   // Cabe pero sin fase de crucero
 
         // Necesita fase de crucero
         mPhases.push_back({
@@ -160,14 +162,10 @@ bool TrajectoryGenerator::Update(double dt) {
     if(dt <= 0.0 || mPhases.empty() || mFinished)
         return false;
 
-    if (mCurrentPhase == 0 && mPhases[mCurrentPhase].jerk == 0.0)
-        mAcc0 = mPhases[0].accLim;
-
     mPhaseTime += dt;
-    mJerk = mPhases[mCurrentPhase].jerk;
-    mAcc = mAcc0 + mJerk * mPhaseTime;
-    mPos = mPos0 + mVel0 * mPhaseTime + 0.5 * mAcc0 * mPhaseTime * mPhaseTime + (1.0/6.0) * mJerk * mPhaseTime * mPhaseTime * mPhaseTime;
-    mVel = mVel0 + mAcc0 * mPhaseTime + 0.5 * mJerk * mPhaseTime * mPhaseTime;
+    mAcc = mPhases[mCurrentPhase].accLim;
+    mVel = mVel0 + mAcc * mPhaseTime;
+    mPos = mPos0 + mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime;
 
     auto advancePhase = [this]()->void {
         mCurrentPhase++;
@@ -176,28 +174,18 @@ bool TrajectoryGenerator::Update(double dt) {
             mPos = mFinal.pos;
             mVel = mFinal.vel;
             mAcc = 0.0;
-            mJerk = 0.0;
             return;
         }
         mPhaseTime = 0.0;
         mPos0 = mPos;
         mVel0 = mVel;
-        mAcc0 = mPhases[mCurrentPhase].jerk == 0.0 ? mPhases[mCurrentPhase].accLim : mAcc;
     };
-
-    if(mPhases[mCurrentPhase].endCondition == EndCondition::ACCEL){
-        double sign = (mPhases[mCurrentPhase].accLim >= mAcc0) ? 1.0 : -1.0;
-        if(sign * (mPhases[mCurrentPhase].accLim - mAcc) <= eps) {
-            mAcc = mPhases[mCurrentPhase].accLim;
-            advancePhase();
-            return true;
-        }
-    }
 
     if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
         double sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
         if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
             mVel = mPhases[mCurrentPhase].velLim;
+            mAcc = 0.0;
             advancePhase();
             return true;
         }
@@ -206,6 +194,8 @@ bool TrajectoryGenerator::Update(double dt) {
     if(mPhases[mCurrentPhase].endCondition == EndCondition::DIST){
         if(mDir * (mPhases[mCurrentPhase].posLim - mPos) <= eps) {
             mPos = mPhases[mCurrentPhase].posLim;
+            mVel = mPhases[mCurrentPhase].velLim;
+            mAcc = 0.0;
             advancePhase();
             return true;
         }
