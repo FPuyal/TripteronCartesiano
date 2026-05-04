@@ -33,4 +33,9 @@ struct TrayectoryPhase {
 
 constexpr double eps = 1e-3;
 
-double CalculatePartialProfileDistance(double initVel, double finalVel, TrajectoryConfig config, TrayectoryProfileType profileType);
+inline double CalculateRampDistance(double initVel, double finalVel, TrajectoryConfig config) {
+    double distance = finalVel >= initVel ?
+        (finalVel * finalVel - initVel * initVel) / (2.0 * config.accMax) :
+        (initVel * initVel - finalVel * finalVel) / (2.0 * config.accMax);
+    return distance;
+}

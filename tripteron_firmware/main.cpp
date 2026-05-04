@@ -20,9 +20,8 @@ int main(){
 
     TrajectoryConfig config {
         12000,
-        1600,
-        16000
-       };
+        1600
+    };
 
     auto trajectoryGenerator = MakeITrajectoryGenerator(config);
 
@@ -30,8 +29,6 @@ int main(){
     MotionState finalState {100000, config.velMax};
 
     trajectoryGenerator->SetTrajectoryProfile(initState, finalState);
-
-    int profileType = trajectoryGenerator->GetProfileType();
 
     while (1) {
         while (!trajectoryGenerator->IsFinished()) {
