@@ -12,7 +12,6 @@ public:
     virtual double GetPosition() const = 0;
     virtual double GetVelocity() const = 0;
     virtual bool IsFinished() const = 0;
-    virtual int GetProfileType() const = 0;
 };
 
 std::shared_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator(TrajectoryConfig config);

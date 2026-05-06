@@ -18,7 +18,7 @@ void HardwareManager::InitHardware() {
 
     MX_GPIO_Init();
     MX_TIM2_Init();
-    MX_I2C2_Init();
+    MX_I2C1_Init();
     MX_USART2_UART_Init();
     HAL_Delay(500);
 
@@ -62,7 +62,7 @@ void HardwareManager::InitHardware() {
     *********************************************************/
 
     std::vector<I2cInfo> i2csInfos = {
-        {I2cId::I2CX, &hi2c2, AS5600_ADDR}
+        {I2cId::I2CX, &hi2c1, AS5600_ADDR}
     };
 
     mI2CManager = MakeII2CManager(i2csInfos);
