@@ -9,6 +9,7 @@ public:
     virtual ~ITrajectoryGenerator() = default;
     virtual bool SetTrajectoryProfile(MotionState init, MotionState final) = 0;
     virtual bool Update(double dt) = 0;
+    virtual void Reset() = 0;
     virtual double GetPosition() const = 0;
     virtual double GetVelocity() const = 0;
     virtual bool IsFinished() const = 0;

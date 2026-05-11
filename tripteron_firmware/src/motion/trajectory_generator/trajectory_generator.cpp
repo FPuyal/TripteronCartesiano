@@ -203,6 +203,20 @@ bool TrajectoryGenerator::Update(double dt) {
     return true;
 }
 
+void TrajectoryGenerator::Reset() {
+    mCurrentPhase = 0;
+    mFinished = true;
+
+    mPhaseTime = 0.0;
+    mPos0 = 0.0;
+    mVel0 = 0.0;
+
+    mDir = 0.0;
+    mPos = 0.0;
+    mVel = 0.0;
+    mAcc = 0.0;
+}
+
 std::shared_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator(TrajectoryConfig config) {
     return std::make_shared<TrajectoryGenerator>(config);
 }
