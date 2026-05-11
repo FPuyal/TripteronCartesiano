@@ -9,6 +9,8 @@ public:
     bool Stop() override;
     void SetFrequency(uint32_t freq) override;
 private:
+    bool mRunning = false;
+
     TIM_HandleTypeDef *mHtim;
     uint32_t mChannel;
 };

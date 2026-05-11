@@ -11,8 +11,16 @@ bool Timer::Stop(){
 }
 
 void Timer::SetFrequency(uint32_t freq){
-    if(freq == 0)
-        freq = 1; // Evitamos división por cero
+    if(freq == 0) {
+        Stop();
+        mRunning = false;
+        return;
+    }
+
+    if(!mRunning) {
+        Start();
+        mRunning = true;
+    }
 
     uint32_t timer_clk = HAL_RCC_GetPCLK1Freq();
 
