@@ -8,15 +8,16 @@ bool Timer::Stop(){
     return HAL_TIM_PWM_Stop(mHtim, mChannel) == HAL_OK;
 }
 
-void Timer::SetFrequency(uint32_t freq){
+bool Timer::SetFrequency(uint32_t freq){
     if(freq == 0) {
-        Stop();
         mRunning = false;
-        return;
+        return Stop();
     }
 
     if(!mRunning) {
-        Start();
+        if(!Start()) {
+            return false;
+        }
         mRunning = true;
     }
 
@@ -31,6 +32,7 @@ void Timer::SetFrequency(uint32_t freq){
 
     __HAL_TIM_SET_AUTORELOAD(mHtim, arr);
     __HAL_TIM_SET_COMPARE(mHtim, mChannel, arr / 2);  // 50%
+    return true;
 }
 
 std::shared_ptr<ITimer> MakeITimer(TIM_HandleTypeDef *htim, uint32_t channel) {

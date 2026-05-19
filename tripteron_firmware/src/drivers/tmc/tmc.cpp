@@ -1,33 +1,27 @@
 #include "tmc.h"
 #include "usart.h"
 
-Tmc::Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps)
+Tmc::Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps)
     : mStep(step), mDir(dir), mEn(en), mUart(uart) {
-        ConfigureRegisters(microSteps);
+        ConfigureRegisters(microSteps, nodeAddress);
     }
 
 bool Tmc::Enable() {
     mEn->Reset();
-    SetSpeed(0);
-    return mStep->Start();
+    return SetSpeed(0);
 }
 
 bool Tmc::Disable() {
     mEn->Set();
-    SetSpeed(0);
-    return mStep->Stop();
+    return SetSpeed(0);
 }
 
 void Tmc::SetDirection(bool dir) {
     dir ? mDir->Set() : mDir->Reset();
 }
 
-void Tmc::ToggleDirection() {
-    mDir->Toggle();
-}
-
-void Tmc::SetSpeed(uint32_t freq) {
-    mStep->SetFrequency(freq);
+bool Tmc::SetSpeed(uint32_t freq) {
+    return mStep->SetFrequency(freq);
 }
 
 // CRC-8 para TMC2209
@@ -46,7 +40,7 @@ static uint8_t tmc_crc8(uint8_t *data, uint8_t len) {
     return crc;
 }
 
-void Tmc::ConfigureRegisters(uint16_t microSteps) {
+void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     uint8_t mres;
 
     switch (microSteps) {
@@ -64,30 +58,30 @@ void Tmc::ConfigureRegisters(uint16_t microSteps) {
     // 1. GCONF — SpreadCycle + control por UART
     // Cambio: bit2 (en_SpreadCycle) = 1
     // Valor: 0x000000C4
-    uint8_t gconf[8] = {0x05, 0x00, 0x80, 0x00, 0x00, 0x00, 0xC4, 0x00};
+    uint8_t gconf[8] = {0x05, nodeAddress, 0x80, 0x00, 0x00, 0x00, 0xC4, 0x00};
     gconf[7] = tmc_crc8(gconf, 7);
     mUart->WriteData(gconf);
 
     // 2. IHOLD_IRUN — IRUN=20 (~65%), IHOLD=8, IHOLDDELAY=6
     // Reduce calentamiento sin sacrificar torque crítico
     // Valor: 0x00061408
-    uint8_t ihold[8] = {0x05, 0x00, 0x90, 0x00, 0x06, 0x14, 0x08, 0x00};
+    uint8_t ihold[8] = {0x05, nodeAddress, 0x90, 0x00, 0x06, 0x14, 0x08, 0x00};
     ihold[7] = tmc_crc8(ihold, 7);
     mUart->WriteData(ihold);
 
     // 3. TPOWERDOWN — sin cambio
-    uint8_t tpdown[8] = {0x05, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14, 0x00};
+    uint8_t tpdown[8] = {0x05, nodeAddress, 0x91, 0x00, 0x00, 0x00, 0x14, 0x00};
     tpdown[7] = tmc_crc8(tpdown, 7);
     mUart->WriteData(tpdown);
 
     // 4. CHOPCONF — 1/4 micropasos, TBL=1, TOFF=4, HSTRT=4, HEND=1, intpol=1
     // MRES=6 → 1/4 microsteps
     // Valor: 0x160080C4
-    uint8_t chopconf[8] = {0x05, 0x00, 0xEC, mres, 0x00, 0x80, 0xC4, 0x00};
+    uint8_t chopconf[8] = {0x05, nodeAddress, 0xEC, mres, 0x00, 0x80, 0xC4, 0x00};
     chopconf[7] = tmc_crc8(chopconf, 7);
     mUart->WriteData(chopconf);
 }
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint16_t microSteps) {
-    return std::make_shared<Tmc>(step, dir, en, uart, microSteps);
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps) {
+    return std::make_shared<Tmc>(step, dir, en, uart, nodeAddress, microSteps);
 }

@@ -7,7 +7,7 @@
 class ITimer {
 public:
     virtual ~ITimer() = default;
-    virtual void SetFrequency(uint32_t freq) = 0;
+    virtual bool SetFrequency(uint32_t freq) = 0;
 };
 
 std::shared_ptr<ITimer> MakeITimer(TIM_HandleTypeDef *htim, uint32_t channel);
