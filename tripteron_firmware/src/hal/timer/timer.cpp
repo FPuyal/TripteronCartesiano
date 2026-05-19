@@ -1,13 +1,11 @@
 #include "timer.h"
 
 bool Timer::Start(){
-    if(HAL_TIM_PWM_Start(mHtim, mChannel) != HAL_OK) return false;
-    return true;
+    return HAL_TIM_PWM_Start(mHtim, mChannel) == HAL_OK;
 }
 
 bool Timer::Stop(){
-    if(HAL_TIM_PWM_Stop(mHtim, mChannel) != HAL_OK) return false;
-    return true;
+    return HAL_TIM_PWM_Stop(mHtim, mChannel) == HAL_OK;
 }
 
 void Timer::SetFrequency(uint32_t freq){
