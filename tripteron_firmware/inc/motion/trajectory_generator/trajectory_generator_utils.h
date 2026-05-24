@@ -7,6 +7,10 @@ struct MotionState {
     double vel;
 };
 
+inline MotionState operator*(const MotionState& a, double scalar) {
+    return MotionState{a.pos * scalar, a.vel * scalar};
+}
+
 struct TrajectoryConfig {
     double velMax;
     double accMax;

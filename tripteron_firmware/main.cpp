@@ -1,13 +1,13 @@
 #include "hardware_manager_interface.h"
 #include "stm32f4xx_hal.h"
+#include "axis_interface.h"
+#include "axis.h"
 #include "trajectory_generator_utils.h"
 #include "utils.h"
 
-#include "trajectory_generator_interface.h"
-
 #include <memory>
+#include <vector>
 
-#include "usart.h"
 
 int main(){
 
@@ -15,30 +15,41 @@ int main(){
 
     hardwareManager->InitHardware();
 
-    auto tmcX = hardwareManager->GetTmcs()[TmcId::TMCX];
-    tmcX->Enable();
+    auto XAxis = MakeIAxis(
+        hardwareManager->GetEndStop(GpioId::END_STOP_X),
+        hardwareManager->GetTmc(TmcId::TMCX),
+        AxisConfig{10, 201, 300, 1000});
 
-    TrajectoryConfig config {
-        12000,
-        1600
-    };
+    std::vector<MotionState> segment = {{10, 10}, {20, 20}, {30, 30}, {40, 40}, {50, 50}};
 
-    auto trajectoryGenerator = MakeITrajectoryGenerator(config);
+    XAxis->RequestState(AxisCommandRequest::Enable);
+    XAxis->Tick();
+    HAL_Delay(1);
+    XAxis->Tick();
+    HAL_Delay(1);
 
-    MotionState initState {0.0, 0.0};
-    MotionState finalState {100000, config.velMax};
+    auto state = XAxis->GetState();
 
-    trajectoryGenerator->SetTrajectoryProfile(initState, finalState);
+    XAxis->RequestState(AxisCommandRequest::Home);
+    XAxis->Tick();
+    HAL_Delay(1);
+    state = XAxis->GetState();
+
+    while (XAxis->GetState() != AxisState::Idle) {
+        XAxis->Tick();
+        HAL_Delay(1);
+    }
+
+   bool segmentSet = XAxis->SetSegment(segment);
+
+    XAxis->RequestState(AxisCommandRequest::Move);
+    XAxis->Tick();
+    HAL_Delay(1);
+    state = XAxis->GetState();
 
     while (1) {
-        while (!trajectoryGenerator->IsFinished()) {
-            trajectoryGenerator->Update(0.001); // Update every 10 ms
-
-            double velocity = trajectoryGenerator->GetVelocity();
-
-            tmcX->SetSpeed(static_cast<uint32_t>(velocity));
-
-            HAL_Delay(1); // Delay for 10 ms
-        }
+        XAxis->Tick();
+        HAL_Delay(1);
     }
 }
+

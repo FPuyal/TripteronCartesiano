@@ -14,13 +14,6 @@ bool Timer::SetFrequency(uint32_t freq){
         return Stop();
     }
 
-    if(!mRunning) {
-        if(!Start()) {
-            return false;
-        }
-        mRunning = true;
-    }
-
     uint32_t timer_clk = HAL_RCC_GetPCLK1Freq();
 
     // Si el prescaler APB1 > 1, el clock del timer es x2
@@ -32,6 +25,13 @@ bool Timer::SetFrequency(uint32_t freq){
 
     __HAL_TIM_SET_AUTORELOAD(mHtim, arr);
     __HAL_TIM_SET_COMPARE(mHtim, mChannel, arr / 2);  // 50%
+
+    if(!mRunning) {
+        __HAL_TIM_SET_COUNTER(mHtim, 0);
+        if(!Start())
+            return false;
+        mRunning = true;
+    }
     return true;
 }
 

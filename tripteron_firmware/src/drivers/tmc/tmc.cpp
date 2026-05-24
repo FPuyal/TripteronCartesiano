@@ -44,16 +44,15 @@ void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     uint8_t mres;
 
     switch (microSteps) {
-        case 256: mres = 0x10; break;
-        case 128: mres = 0x11; break;
-        case 64:  mres = 0x12; break;
-        case 32:  mres = 0x13; break;
-        case 16:  mres = 0x14; break;
-        case 8:   mres = 0x15; break;
-        case 4:   mres = 0x16; break;
-        case 2:   mres = 0x17; break;
-        case 1:   mres = 0x18; break;
-        default:  mres = 0x18; break;
+        case 128: mres = 0x10; break;
+        case 64:  mres = 0x11; break;
+        case 32:  mres = 0x12; break;
+        case 16:  mres = 0x13; break;
+        case 8:   mres = 0x14; break;
+        case 4:   mres = 0x15; break;
+        case 2:   mres = 0x16; break;
+        case 1:   mres = 0x17; break;
+        default:  mres = 0x17; break;
     }
     // 1. GCONF — SpreadCycle + control por UART
     // Cambio: bit2 (en_SpreadCycle) = 1

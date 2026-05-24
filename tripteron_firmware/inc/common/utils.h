@@ -6,10 +6,12 @@
 #include <memory>
 
 class IGpioOutput;
+class IGpioInput;
 class ITimer;
 class ITmc;
 class II2CWrapper;
 class IUart;
+class IAxis;
 
 enum class GpioId {
     DIR_TMCX,
@@ -72,6 +74,7 @@ struct TmcInfo {
     std::shared_ptr<IGpioOutput> en;
     std::shared_ptr<IGpioOutput> dir;
     std::shared_ptr<IUart> uart;
+    uint8_t nodeAddress;
     uint16_t microSteps;
 };
 
@@ -97,4 +100,25 @@ enum class EncoderId {
 struct EncoderInfo {
     EncoderId id;
     std::shared_ptr<II2CWrapper> i2c;
+};
+
+enum class AxisId {
+    AxisX = 0,
+    AxisY,
+    AxisZ,
+    COUNT
+};
+
+struct AxisConfig {
+    double stepsMmRatio;
+    double maxPosition;
+    double maxVelocity;
+    double maxAcceleration;
+};
+
+struct AxisInfo {
+    AxisId id;
+    std::shared_ptr<IGpioInput> endStop;
+    std::shared_ptr<ITmc> tmc;
+    AxisConfig config;
 };

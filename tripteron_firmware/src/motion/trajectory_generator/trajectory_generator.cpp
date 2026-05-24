@@ -103,20 +103,20 @@ bool TrajectoryGenerator::GeneratePhases() {
             return false;
 
         double pos_aux = mFinal.pos;
-        double dist_aux = abs(mFinal.pos - mInit.pos);
+        double dist_aux = (mFinal.pos - mInit.pos) * mDir;
 
         if(profileType == TrayectoryProfileType::TRAPEZOIDAL) {
             double decelDist = CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
             dist_aux -= CalculateRampDistance(mInit.vel, cruiseVel, mConfig);
             dist_aux -= decelDist;
-            pos_aux  -= decelDist;
+            pos_aux  -= (mDir * decelDist);
         }
         if(profileType == TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) {
             dist_aux -= mInit.vel <= mFinal.vel ?
                 CalculateRampDistance(mInit.vel, cruiseVel, mConfig) :
                 CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
             pos_aux = mInit.vel <= mFinal.vel ? pos_aux :
-                pos_aux - CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
+                pos_aux - mDir * CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
         }
 
         if (dist_aux < -eps)
@@ -137,20 +137,20 @@ bool TrajectoryGenerator::GeneratePhases() {
 
     switch (mProfile) {
         case TrayectoryProfileType::TRAPEZOIDAL:
-            return addRampProfile(mInit.vel, mConfig.velMax)
+            return (addRampProfile(mInit.vel, mConfig.velMax)
             && addCruisePhase(mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL)
-            && addRampProfile(mConfig.velMax, mFinal.vel);
+            && addRampProfile(mConfig.velMax, mFinal.vel));
         case TrayectoryProfileType::TRAPEZOIDAL_PARCIAL:
             if(mFinal.vel < mInit.vel - eps)
-                return addCruisePhase(mInit.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) &&
-                    addRampProfile(mInit.vel, mFinal.vel);
-            return addRampProfile(mInit.vel, mFinal.vel) &&
-                addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
+                return (addCruisePhase(mInit.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) &&
+                    addRampProfile(mInit.vel, mFinal.vel));
+            return (addRampProfile(mInit.vel, mFinal.vel) &&
+                addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL));
         case TrayectoryProfileType::TRIANGULAR : {
             double dist = abs(mFinal.pos - mInit.pos);
             double max_vel_aux = sqrt(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
-            return addRampProfile(mInit.vel, max_vel_aux) &&
-                addRampProfile(max_vel_aux, mFinal.vel);
+            return (addRampProfile(mInit.vel, max_vel_aux) &&
+                addRampProfile(max_vel_aux, mFinal.vel));
         }
         default:
             return false;
@@ -164,7 +164,7 @@ bool TrajectoryGenerator::Update(double dt) {
     mPhaseTime += dt;
     mAcc = mPhases[mCurrentPhase].accLim;
     mVel = mVel0 + mAcc * mPhaseTime;
-    mPos = mPos0 + mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime;
+    mPos = mPos0 + mDir * (mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime);
 
     auto advancePhase = [this]()->void {
         mCurrentPhase++;
@@ -205,7 +205,7 @@ bool TrajectoryGenerator::Update(double dt) {
 
 void TrajectoryGenerator::Reset() {
     mCurrentPhase = 0;
-    mFinished = true;
+    mFinished = false;
 
     mPhaseTime = 0.0;
     mPos0 = 0.0;
@@ -217,6 +217,6 @@ void TrajectoryGenerator::Reset() {
     mAcc = 0.0;
 }
 
-std::shared_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator(TrajectoryConfig config) {
-    return std::make_shared<TrajectoryGenerator>(config);
+std::unique_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator(TrajectoryConfig config) {
+    return std::make_unique<TrajectoryGenerator>(config);
 }

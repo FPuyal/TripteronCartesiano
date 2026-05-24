@@ -14,8 +14,8 @@ class HardwareManager : public IHardwareManager {
 public:
     HardwareManager() = default;
     void InitHardware() override;
-    std::map<TmcId, std::shared_ptr<ITmc>> GetTmcs() override;
-    std::map<EncoderId, std::shared_ptr<IEncoder>> GetEncoders() override;
+    std::shared_ptr<ITmc> GetTmc(TmcId id) override;
+    std::shared_ptr<IEncoder> GetEncoder(EncoderId id) override;
     std::shared_ptr<IGpioInput> GetEndStop(GpioId id) override;
 private:
     std::shared_ptr<IGpioManager> mGpioManager;

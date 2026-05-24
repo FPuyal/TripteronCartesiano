@@ -8,6 +8,7 @@ public:
     bool SetTrajectoryProfile(MotionState init, MotionState final);
     bool Update(double dt) override;
     void Reset() override;
+    bool GetDirection() const override { return mDir > 0.0; }
     double GetPosition() const override { return mPos; }
     double GetVelocity() const override { return mVel; }
     bool IsFinished() const override { return mFinished; }
@@ -29,10 +30,10 @@ private:
     double mVel0 = 0.0;
 
     // Actual state variables
-    double mDir;
-    double mPos;
-    double mVel;
-    double mAcc;
+    double mDir = 0.0;
+    double mPos = 0.0;
+    double mVel = 0.0;
+    double mAcc = 0.0;
 
-    bool mFinished;
+    bool mFinished = true;
 };

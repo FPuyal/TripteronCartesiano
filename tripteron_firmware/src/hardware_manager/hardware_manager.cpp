@@ -26,8 +26,8 @@ void HardwareManager::InitHardware() {
     *               Configuración del HW
     *********************************************************/
     std::vector<GpioInfo> gpiosInfo = {
-        {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_2},
         {GpioId::DIR_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_1},
+        {GpioId::EN_TMCX, GpioMode::OUTPUT, GPIOA, GPIO_PIN_2},
         {GpioId::END_STOP_X, GpioMode::INPUT, GPIOA, GPIO_PIN_4}
     };
 
@@ -52,7 +52,8 @@ void HardwareManager::InitHardware() {
             mGpioManager->GetGpioOutput(GpioId::EN_TMCX),
             mGpioManager->GetGpioOutput(GpioId::DIR_TMCX),
             mUartManager->GetUart(UartId::UART2),
-            4 }
+            0x00,
+            2 }
     };
 
     mTmcManager = MakeITmcManager(tmcsInfo);
@@ -76,30 +77,12 @@ void HardwareManager::InitHardware() {
 
 }
 
-std::map<TmcId, std::shared_ptr<ITmc>> HardwareManager::GetTmcs() {
-    std::map<TmcId, std::shared_ptr<ITmc>> tmcs;
-    for(int i = 0; i < static_cast<int>(TmcId::COUNT); i++) {
-        auto tmc = mTmcManager->GetTmc(static_cast<TmcId>(i));
-        if (!tmc) {
-            // error al obtener el TMC
-            break;
-        }
-        tmcs[static_cast<TmcId>(i)] = tmc;
-    }
-    return tmcs;
+std::shared_ptr<ITmc> HardwareManager::GetTmc(TmcId id) {
+    return mTmcManager->GetTmc(id);
 }
 
-std::map<EncoderId, std::shared_ptr<IEncoder>> HardwareManager::GetEncoders() {
-    std::map<EncoderId, std::shared_ptr<IEncoder>> encoders;
-    for(int i = 0; i < static_cast<int>(EncoderId::COUNT); i++) {
-        auto enc = mEncoderManager->GetEncoder(static_cast<EncoderId>(i));
-        if (!enc) {
-            // error al obtener el TMC
-            break;
-        }
-        encoders[static_cast<EncoderId>(i)] = enc;
-    }
-    return encoders;
+std::shared_ptr<IEncoder> HardwareManager::GetEncoder(EncoderId id) {
+    return mEncoderManager->GetEncoder(id);
 }
 
 std::shared_ptr<IGpioInput> HardwareManager::GetEndStop(GpioId id) {
