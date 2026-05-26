@@ -12,8 +12,8 @@ class IHardwareManager {
 public:
     virtual ~IHardwareManager() = default;
     virtual void InitHardware() = 0;
-    virtual std::map<TmcId, std::shared_ptr<ITmc>> GetTmcs() = 0;
-    virtual std::map<EncoderId, std::shared_ptr<IEncoder>> GetEncoders() = 0;
+    virtual std::shared_ptr<ITmc> GetTmc(TmcId id) = 0;
+    virtual std::shared_ptr<IEncoder> GetEncoder(EncoderId id) = 0;
     virtual std::shared_ptr<IGpioInput> GetEndStop(GpioId id) = 0;
 };
 

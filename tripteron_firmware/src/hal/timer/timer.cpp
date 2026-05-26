@@ -1,18 +1,18 @@
 #include "timer.h"
 
 bool Timer::Start(){
-    if(HAL_TIM_PWM_Start(mHtim, mChannel) != HAL_OK) return false;
-    return true;
+    return HAL_TIM_PWM_Start(mHtim, mChannel) == HAL_OK;
 }
 
 bool Timer::Stop(){
-    if(HAL_TIM_PWM_Stop(mHtim, mChannel) != HAL_OK) return false;
-    return true;
+    return HAL_TIM_PWM_Stop(mHtim, mChannel) == HAL_OK;
 }
 
-void Timer::SetFrequency(uint32_t freq){
-    if(freq == 0)
-        freq = 1; // Evitamos división por cero
+bool Timer::SetFrequency(uint32_t freq){
+    if(freq == 0) {
+        mRunning = false;
+        return Stop();
+    }
 
     uint32_t timer_clk = HAL_RCC_GetPCLK1Freq();
 
@@ -25,6 +25,14 @@ void Timer::SetFrequency(uint32_t freq){
 
     __HAL_TIM_SET_AUTORELOAD(mHtim, arr);
     __HAL_TIM_SET_COMPARE(mHtim, mChannel, arr / 2);  // 50%
+
+    if(!mRunning) {
+        __HAL_TIM_SET_COUNTER(mHtim, 0);
+        if(!Start())
+            return false;
+        mRunning = true;
+    }
+    return true;
 }
 
 std::shared_ptr<ITimer> MakeITimer(TIM_HandleTypeDef *htim, uint32_t channel) {

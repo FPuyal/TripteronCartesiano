@@ -62,15 +62,17 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${USER_SOURCES})
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    tripteron_firmware/inc
-    tripteron_firmware/inc/gpio
-    tripteron_firmware/inc/timer
-    tripteron_firmware/inc/tmc
+    tripteron_firmware/inc/hal/gpio
+    tripteron_firmware/inc/hal/timer
+    tripteron_firmware/inc/hal/i2c
+    tripteron_firmware/inc/hal/uart
+    tripteron_firmware/inc/drivers/tmc
+    tripteron_firmware/inc/drivers/encoder
     tripteron_firmware/inc/hardware_manager
-    tripteron_firmware/inc/i2c
-    tripteron_firmware/inc/encoder
-    tripteron_firmware/inc/trajectory_generator
-    tripteron_firmware/inc/uart
+    tripteron_firmware/inc/motion/trajectory_generator
+    tripteron_firmware/inc/mechanics/axis
+    tripteron_firmware/inc/common
+
 )
 
 # Add project symbols (macros)
