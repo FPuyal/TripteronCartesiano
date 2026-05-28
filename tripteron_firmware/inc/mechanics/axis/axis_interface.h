@@ -5,6 +5,7 @@
 #include "trajectory_generator_interface.h"
 #include "trajectory_generator_utils.h"
 #include "axis_types.h"
+#include "utils.h"
 #include <memory>
 #include <vector>
 

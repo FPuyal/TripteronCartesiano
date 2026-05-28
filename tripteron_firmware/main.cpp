@@ -16,11 +16,11 @@ int main(){
     hardwareManager->InitHardware();
 
     auto XAxis = MakeIAxis(
-        hardwareManager->GetEndStop(GpioId::END_STOP_X),
-        hardwareManager->GetTmc(TmcId::TMCX),
-        AxisConfig{10, 201, 300, 1000});
+        hardwareManager->GetEndStop(EndStopId::XEnd),
+        hardwareManager->GetTmc(TmcId::XTmc),
+        AxisConfig{10, 201, 500, 1000});
 
-    std::vector<MotionState> segment = {{10, 10}, {20, 20}, {30, 30}, {40, 40}, {50, 50}};
+    std::vector<MotionState> segment = {{180, 0}, {0, 0}};
 
     XAxis->RequestState(AxisCommandRequest::Enable);
     XAxis->Tick();
