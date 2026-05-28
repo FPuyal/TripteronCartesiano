@@ -1,8 +1,10 @@
 #pragma once
 
-#include "gpio_wrapper_interface.h"
+#include "stm32f4xx_hal.h"
 
-class IGpioOutput : public virtual IGpioWrapper {
+#include <memory>
+
+class IGpioOutput {
 public:
     virtual ~IGpioOutput() = default;
     virtual void Set() = 0;

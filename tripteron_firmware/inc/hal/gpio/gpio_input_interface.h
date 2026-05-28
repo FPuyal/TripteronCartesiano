@@ -1,8 +1,10 @@
 #pragma once
 
-#include "gpio_wrapper_interface.h"
+#include "stm32f4xx_hal.h"
 
-class IGpioInput : public virtual IGpioWrapper {
+#include <memory>
+
+class IGpioInput {
 public:
     virtual ~IGpioInput() = default;
     virtual bool Read() = 0;
