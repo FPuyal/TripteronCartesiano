@@ -9,10 +9,10 @@
 class ITmc {
 public:
     virtual ~ITmc() = default;
-    virtual bool Enable() = 0;
-    virtual bool Disable() = 0;
-    virtual void SetDirection(bool dir) = 0;
-    virtual bool SetSpeed(uint32_t freq) = 0;
+    virtual void Enable() = 0;
+    virtual void Disable() = 0;
+    virtual void SetDir(bool dir) = 0;
+    virtual void SetStep(bool step) = 0;
 };
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps);
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<IGpioOutput> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps);

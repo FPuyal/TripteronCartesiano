@@ -1,27 +1,25 @@
 #include "tmc.h"
 #include "usart.h"
 
-Tmc::Tmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps)
+Tmc::Tmc(std::shared_ptr<IGpioOutput> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps)
     : mStep(step), mDir(dir), mEn(en), mUart(uart) {
         ConfigureRegisters(microSteps, nodeAddress);
     }
 
-bool Tmc::Enable() {
+void Tmc::Enable() {
     mEn->Reset();
-    return SetSpeed(0);
 }
 
-bool Tmc::Disable() {
+void Tmc::Disable() {
     mEn->Set();
-    return SetSpeed(0);
 }
 
-void Tmc::SetDirection(bool dir) {
+void Tmc::SetDir(bool dir) {
     dir ? mDir->Set() : mDir->Reset();
 }
 
-bool Tmc::SetSpeed(uint32_t freq) {
-    return mStep->SetFrequency(freq);
+void Tmc::SetStep(bool step) {
+    step ? mStep->Set() : mStep->Reset();
 }
 
 // CRC-8 para TMC2209
@@ -81,6 +79,6 @@ void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     mUart->WriteData(chopconf);
 }
 
-std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<ITimer> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps) {
+std::shared_ptr<ITmc> MakeITmc(std::shared_ptr<IGpioOutput> step, std::shared_ptr<IGpioOutput> dir, std::shared_ptr<IGpioOutput> en, std::shared_ptr<IUart> uart, uint8_t nodeAddress, uint16_t microSteps) {
     return std::make_shared<Tmc>(step, dir, en, uart, nodeAddress, microSteps);
 }
