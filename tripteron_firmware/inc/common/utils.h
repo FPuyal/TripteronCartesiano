@@ -5,6 +5,12 @@
 
 #include <memory>
 
+enum class TimerId {
+    Timer1 = 0,
+    Timer2,
+    COUNT
+};
+
 enum class EndStopId {
     XEnd = 0,
     YEnd,
@@ -24,11 +30,4 @@ enum class EncoderId {
     YEncoder,
     ZEncoder,
     COUNT
-};
-
-struct AxisConfig {
-    double stepsMmRatio;
-    double maxPosition;
-    double maxVelocity;
-    double maxAcceleration;
 };

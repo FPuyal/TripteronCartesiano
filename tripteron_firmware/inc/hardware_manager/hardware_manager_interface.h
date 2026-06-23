@@ -12,6 +12,7 @@ class IHardwareManager {
 public:
     virtual ~IHardwareManager() = default;
     virtual void InitHardware() = 0;
+    virtual std::shared_ptr<ITimer> GetTimer(TimerId id) = 0;
     virtual std::shared_ptr<ITmc> GetTmc(TmcId id) = 0;
     virtual std::shared_ptr<IEncoder> GetEncoder(EncoderId id) = 0;
     virtual std::shared_ptr<IGpioInput> GetEndStop(EndStopId id) = 0;

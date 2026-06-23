@@ -45,10 +45,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DIR_Pin|EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, STEP_Pin|DIR_Pin|EN_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DIR_Pin EN_Pin */
-  GPIO_InitStruct.Pin = DIR_Pin|EN_Pin;
+  /*Configure GPIO pins : STEP_Pin DIR_Pin EN_Pin */
+  GPIO_InitStruct.Pin = STEP_Pin|DIR_Pin|EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
