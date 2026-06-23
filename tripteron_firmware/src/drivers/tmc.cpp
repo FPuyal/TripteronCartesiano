@@ -42,16 +42,18 @@ void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     uint8_t mres;
 
     switch (microSteps) {
-        case 128: mres = 0x10; break;
-        case 64:  mres = 0x11; break;
-        case 32:  mres = 0x12; break;
-        case 16:  mres = 0x13; break;
-        case 8:   mres = 0x14; break;
-        case 4:   mres = 0x15; break;
-        case 2:   mres = 0x16; break;
-        case 1:   mres = 0x17; break;
-        default:  mres = 0x17; break;
+        case 256: mres = 0x00; break;
+        case 128: mres = 0x01; break;
+        case 64:  mres = 0x02; break;
+        case 32:  mres = 0x03; break;
+        case 16:  mres = 0x04; break;
+        case 8:   mres = 0x05; break;
+        case 4:   mres = 0x06; break;
+        case 2:   mres = 0x07; break;
+        case 1:   mres = 0x08; break;
+        default:  mres = 0x08; break;
     }
+
     // 1. GCONF — SpreadCycle + control por UART
     // Cambio: bit2 (en_SpreadCycle) = 1
     // Valor: 0x000000C4
@@ -74,7 +76,7 @@ void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     // 4. CHOPCONF — 1/4 micropasos, TBL=1, TOFF=4, HSTRT=4, HEND=1, intpol=1
     // MRES=6 → 1/4 microsteps
     // Valor: 0x160080C4
-    uint8_t chopconf[8] = {0x05, nodeAddress, 0xEC, mres, 0x00, 0x80, 0xC4, 0x00};
+    uint8_t chopconf[8] = {0x05, nodeAddress, 0xEC, mres | 0x10, 0x00, 0x80, 0xC4, 0x00};
     chopconf[7] = tmc_crc8(chopconf, 7);
     mUart->WriteData(chopconf);
 }

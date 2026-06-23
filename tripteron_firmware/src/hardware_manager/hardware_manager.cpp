@@ -22,23 +22,28 @@ void HardwareManager::InitHardware() {
     SystemClock_Config();
 
     MX_GPIO_Init();
-    MX_TIM2_Init();
+    MX_TIM1_Init();
     MX_USART2_UART_Init();
     HAL_Delay(500);
 
-    std::shared_ptr<IGpioInput> endStopX = MakeIGpioInput(GPIOA, GPIO_PIN_4);
+    mTimers[TimerId::Timer1] = MakeITimer(&htim1);
 
-    std::shared_ptr<ITmc> tmcX = MakeITmc(
-            MakeITimer(&htim2, TIM_CHANNEL_1),
+    mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOA, GPIO_PIN_4);
+
+    mTmcs[TmcId::XTmc] = MakeITmc(
+            MakeIGpioOutput(GPIOA, GPIO_PIN_0),
             MakeIGpioOutput(GPIOA, GPIO_PIN_1),
             MakeIGpioOutput(GPIOA, GPIO_PIN_2),
             MakeIUart(&huart2),
             0x00,
-            2
+            4
     );
 
-    mTmcs[TmcId::XTmc] = tmcX;
-    mEndStops[EndStopId::XEnd] = endStopX;
+    mTimers[TimerId::Timer1]->Stop();
+}
+
+std::shared_ptr<ITimer> HardwareManager::GetTimer(TimerId id) {
+    return mTimers[id];
 }
 
 std::shared_ptr<ITmc> HardwareManager::GetTmc(TmcId id) {

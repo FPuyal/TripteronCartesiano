@@ -1,13 +1,6 @@
+#include "step_engine_interface.h"
 #include "hardware_manager_interface.h"
-#include "stm32f4xx_hal.h"
-#include "axis_interface.h"
-#include "axis.h"
-#include "trajectory_generator_utils.h"
 #include "utils.h"
-
-#include <memory>
-#include <vector>
-
 
 int main(){
 
@@ -15,41 +8,32 @@ int main(){
 
     hardwareManager->InitHardware();
 
-    auto XAxis = MakeIAxis(
-        hardwareManager->GetEndStop(EndStopId::XEnd),
-        hardwareManager->GetTmc(TmcId::XTmc),
-        AxisConfig{10, 201, 500, 1000});
+    extern IStepEngine* stepEngineInstance;
 
-    std::vector<MotionState> segment = {{180, 0}, {0, 0}};
+    auto stepEngine = MakeIStepEngine(
+        19200,
+        *hardwareManager->GetTmc(TmcId::XTmc)
+    );
+    stepEngineInstance = stepEngine.get();
 
-    XAxis->RequestState(AxisCommandRequest::Enable);
-    XAxis->Tick();
-    HAL_Delay(1);
-    XAxis->Tick();
-    HAL_Delay(1);
+    hardwareManager->GetTimer(TimerId::Timer1)->Start();
 
-    auto state = XAxis->GetState();
+    int16_t steps[3] = {0, 0, 0};
+    const int16_t target = 9600;
+    const int16_t increment = 100;   // cuánto sube cada escalón
+    const uint32_t rampDelayMs = 10; // tiempo entre escalones
 
-    XAxis->RequestState(AxisCommandRequest::Home);
-    XAxis->Tick();
-    HAL_Delay(1);
-    state = XAxis->GetState();
-
-    while (XAxis->GetState() != AxisState::Idle) {
-        XAxis->Tick();
-        HAL_Delay(1);
-    }
-
-   bool segmentSet = XAxis->SetSegment(segment);
-
-    XAxis->RequestState(AxisCommandRequest::Move);
-    XAxis->Tick();
-    HAL_Delay(1);
-    state = XAxis->GetState();
-
-    while (1) {
-        XAxis->Tick();
-        HAL_Delay(1);
+    while(1){
+        // Rampa de subida hasta target
+        if(steps[0] < target){
+            steps[0] += increment;
+            if(steps[0] > target) steps[0] = target;
+            stepEngine->SetSteps(steps);
+            HAL_Delay(rampDelayMs);
+        }
+        stepEngine->Update();
     }
 }
+
+
 
