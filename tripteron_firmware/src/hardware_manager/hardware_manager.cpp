@@ -4,6 +4,7 @@
 #include "gpio.h"
 #include "tim.h"
 #include "usart.h"
+#include "i2c.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
 
@@ -23,10 +24,28 @@ void HardwareManager::InitHardware() {
 
     MX_GPIO_Init();
     MX_TIM1_Init();
+    MX_TIM2_Init();
+    MX_I2C1_Init();
+    MX_I2C2_Init();
+    MX_I2C3_Init();
     MX_USART2_UART_Init();
     HAL_Delay(500);
 
-    mTimers[TimerId::Timer1] = MakeITimer(&htim1);
+    mTimers[TimerId::Tim1] = MakeITimer(&htim1);
+    mTimers[TimerId::Tim2] = MakeITimer(&htim2);
+
+    mEncoders[EncoderId::XEncoder] = MakeIEncoder(
+            MakeIGpioInput(GPIOA, GPIO_PIN_6),
+            MakeIGpioInput(GPIOA, GPIO_PIN_7)
+    );
+    mEncoders[EncoderId::YEncoder] = MakeIEncoder(
+            MakeIGpioInput(GPIOB, GPIO_PIN_0),
+            MakeIGpioInput(GPIOB, GPIO_PIN_1)
+    );
+    mEncoders[EncoderId::ZEncoder] = MakeIEncoder(
+            MakeIGpioInput(GPIOB, GPIO_PIN_4),
+            MakeIGpioInput(GPIOB, GPIO_PIN_5)
+    );
 
     mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOA, GPIO_PIN_4);
 
@@ -39,7 +58,8 @@ void HardwareManager::InitHardware() {
             4
     );
 
-    mTimers[TimerId::Timer1]->Stop();
+    mTimers[TimerId::Tim1]->Stop();
+    mTimers[TimerId::Tim2]->Stop();
 }
 
 std::shared_ptr<ITimer> HardwareManager::GetTimer(TimerId id) {

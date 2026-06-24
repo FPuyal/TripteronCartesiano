@@ -6,8 +6,8 @@
 #include <memory>
 
 enum class TimerId {
-    Timer1 = 0,
-    Timer2,
+    Tim1 = 0,
+    Tim2,
     COUNT
 };
 
