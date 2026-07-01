@@ -18,12 +18,12 @@ bool Encoder::SetOffset(){
     return true;
 }
 
-bool Encoder::ReadAngle(double& angle){
+bool Encoder::ReadAngle(float& angle){
     uint16_t raw_angle = 0;
 
     mI2cWrapper->SetMemAddress(AS5600_ANGLE);
     if(mI2cWrapper->Read(raw_angle)) {
-        angle = raw_angle * 360.0 / 4096.0;
+        angle = raw_angle * 360.0f / 4096.0f;
         return true;
     }
     return false;

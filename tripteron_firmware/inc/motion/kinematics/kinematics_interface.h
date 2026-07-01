@@ -5,8 +5,8 @@
 #include <memory>
 
 struct CinematicState {
-    int32_t pos[3];
-    int32_t vel[3];
+    float pos[3];
+    float vel[3];
 };
 
 class IKinematics {

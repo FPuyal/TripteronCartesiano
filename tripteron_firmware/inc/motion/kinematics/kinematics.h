@@ -10,11 +10,16 @@ public:
     CinematicState Update() override;
 
 private:
-    CinematicState mPreviousState{ {0, 0, 0}, {0, 0, 0} };
+    void CalculateKinematics();
+
+    CinematicState mCurrentState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    CinematicState mPreviousState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
     std::shared_ptr<IEncoder> mXEncoder;
     std::shared_ptr<IEncoder> mYEncoder;
     std::shared_ptr<IEncoder> mZEncoder;
+
+    volatile bool mUpdateKinematics = false;
 };
 
 // Observador Luenberger para estimar posición, velocidad y aceleración de cada eje del robot.

@@ -71,6 +71,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/hardware_manager
     tripteron_firmware/inc/motion/trajectory_generator
     tripteron_firmware/inc/motion/step_engine
+    tripteron_firmware/inc/motion/kinematics
     tripteron_firmware/inc/mechanics/axis
     tripteron_firmware/inc/common
 )

@@ -34,18 +34,9 @@ void HardwareManager::InitHardware() {
     mTimers[TimerId::Tim1] = MakeITimer(&htim1);
     mTimers[TimerId::Tim2] = MakeITimer(&htim2);
 
-    mEncoders[EncoderId::XEncoder] = MakeIEncoder(
-            MakeIGpioInput(GPIOA, GPIO_PIN_6),
-            MakeIGpioInput(GPIOA, GPIO_PIN_7)
-    );
-    mEncoders[EncoderId::YEncoder] = MakeIEncoder(
-            MakeIGpioInput(GPIOB, GPIO_PIN_0),
-            MakeIGpioInput(GPIOB, GPIO_PIN_1)
-    );
-    mEncoders[EncoderId::ZEncoder] = MakeIEncoder(
-            MakeIGpioInput(GPIOB, GPIO_PIN_4),
-            MakeIGpioInput(GPIOB, GPIO_PIN_5)
-    );
+    mEncoders[EncoderId::XEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c1, 0x6C));
+    mEncoders[EncoderId::YEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c2, 0x6C));
+    mEncoders[EncoderId::ZEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c3, 0x6C));
 
     mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOA, GPIO_PIN_4);
 
