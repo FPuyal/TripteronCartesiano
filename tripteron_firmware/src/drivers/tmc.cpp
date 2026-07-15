@@ -68,6 +68,10 @@ void Tmc::ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress) {
     ihold[7] = tmc_crc8(ihold, 7);
     mUart->WriteData(ihold);
 
+    /* uint8_t ihold_test[8] = {0x05, nodeAddress, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00};
+    ihold_test[7] = tmc_crc8(ihold_test, 7);
+    mUart->WriteData(ihold_test); */
+
     // 3. TPOWERDOWN — sin cambio
     uint8_t tpdown[8] = {0x05, nodeAddress, 0x91, 0x00, 0x00, 0x00, 0x14, 0x00};
     tpdown[7] = tmc_crc8(tpdown, 7);

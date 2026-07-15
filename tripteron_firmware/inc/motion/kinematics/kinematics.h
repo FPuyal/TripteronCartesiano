@@ -7,13 +7,17 @@ class Kinematics : public IKinematics {
 public:
     Kinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder) :
         mXEncoder(xEncoder), mYEncoder(yEncoder), mZEncoder(zEncoder) {}
-    CinematicState Update() override;
+    void CaptureHome() override;
+    void Update() override;
+    void RequestUpdate() override { mUpdateKinematics = true; }
+    KinematicState GetCurrentState() const override { return mCurrentState; }
 
 private:
     void CalculateKinematics();
 
-    CinematicState mCurrentState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-    CinematicState mPreviousState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    KinematicState mCurrentState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    KinematicState mPreviousState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    float mHome[3] {0.0f, 0.0f, 0.0f};
 
     std::shared_ptr<IEncoder> mXEncoder;
     std::shared_ptr<IEncoder> mYEncoder;

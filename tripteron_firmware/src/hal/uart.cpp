@@ -2,14 +2,11 @@
 #include <memory>
 
 bool Uart::WriteData(uint8_t* data) {
-    bool result = HAL_UART_Transmit(mHuart, data, 8, 1000) == HAL_OK;
-    HAL_Delay(10);
-    return result;
+    return HAL_UART_Transmit(mHuart, data, 8, 1000) == HAL_OK;
 }
 
 bool Uart::ReadData(uint8_t* data) {
-    // return HAL_UART_Receive(mHuart, (uint8_t*)this, sizeof(this), 1000) == HAL_OK;
-    return false;
+    return HAL_UART_Receive(mHuart, data, 8, 1000) == HAL_OK;
 }
 
 std::shared_ptr<IUart> MakeIUart(UART_HandleTypeDef *huart){

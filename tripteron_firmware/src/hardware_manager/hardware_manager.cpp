@@ -2,6 +2,7 @@
 
 // STM HAL includes
 #include "gpio.h"
+#include "stm32f401xe.h"
 #include "tim.h"
 #include "usart.h"
 #include "i2c.h"
@@ -38,15 +39,33 @@ void HardwareManager::InitHardware() {
     mEncoders[EncoderId::YEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c2, 0x6C));
     mEncoders[EncoderId::ZEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c3, 0x6C));
 
-    mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOA, GPIO_PIN_4);
+    mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_13);
+    mEndStops[EndStopId::YEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_14);
+    mEndStops[EndStopId::ZEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_15);
 
     mTmcs[TmcId::XTmc] = MakeITmc(
-            MakeIGpioOutput(GPIOA, GPIO_PIN_0),
-            MakeIGpioOutput(GPIOA, GPIO_PIN_1),
-            MakeIGpioOutput(GPIOA, GPIO_PIN_2),
+            MakeIGpioOutput(GPIOE, GPIO_PIN_6),
+            MakeIGpioOutput(GPIOE, GPIO_PIN_5),
+            MakeIGpioOutput(GPIOE, GPIO_PIN_4),
             MakeIUart(&huart2),
             0x00,
             4
+    );
+    mTmcs[TmcId::YTmc] = MakeITmc(
+            MakeIGpioOutput(GPIOB, GPIO_PIN_6),
+            MakeIGpioOutput(GPIOB, GPIO_PIN_5),
+            MakeIGpioOutput(GPIOB, GPIO_PIN_4),
+            MakeIUart(&huart2),
+            0x01,
+            4
+    );
+    mTmcs[TmcId::ZTmc] = MakeITmc(
+            MakeIGpioOutput(GPIOD, GPIO_PIN_6),
+            MakeIGpioOutput(GPIOD, GPIO_PIN_5),
+            MakeIGpioOutput(GPIOD, GPIO_PIN_4),
+            MakeIUart(&huart2),
+            0x02,
+            1
     );
 
     mTimers[TimerId::Tim1]->Stop();

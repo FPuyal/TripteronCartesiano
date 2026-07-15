@@ -8,7 +8,7 @@ public:
         mI2cWrapper(i2cWrapper) {}
     bool SetOffset() override;
     bool ReadAngle(float& angle) override;
-    
+
 private:
     std::shared_ptr<II2CWrapper> mI2cWrapper;
 };

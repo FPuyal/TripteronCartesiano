@@ -13,7 +13,7 @@ bool Encoder::SetOffset(){
     if(!mI2cWrapper->Read(init_raw_angle))
         return false;
     mI2cWrapper->SetMemAddress(ZPOS_H);
-    if(mI2cWrapper->Write(init_raw_angle))
+    if(!mI2cWrapper->Write(init_raw_angle))
         return false;
     return true;
 }
@@ -24,6 +24,7 @@ bool Encoder::ReadAngle(float& angle){
     mI2cWrapper->SetMemAddress(AS5600_ANGLE);
     if(mI2cWrapper->Read(raw_angle)) {
         angle = raw_angle * 360.0f / 4096.0f;
+        if(angle > 180.0f) angle -= 360.0f;
         return true;
     }
     return false;

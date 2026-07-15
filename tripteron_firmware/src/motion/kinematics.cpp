@@ -1,29 +1,39 @@
 #include "kinematics.h"
 #include <cmath>
 
-#define DIST    100.0f // Length of the robot arm in mm
-#define GAMMAX  0.0f   // Offset for X axis in mm
-#define GAMMAY  0.0f   // Offset for Y axis in mm
-#define GAMMAZ  0.0f   // Offset for Z axis in mm
-#define LY      50.0f  // Distance from Y axis to X arm base in mm
-#define LX      50.0f  // Distance from X axis to Y arm base in mm
-#define DX      -50.0f // Distance from X axis to Z arm base in mm
-#define DY      -50.0f // Distance from Y axis to Z arm base in mm
-#define L1      10.0f  // Offset from Y axis to end effector in mm
-#define L2      10.0f  // Offset from X axis to end effector in mm
-#define L3      10.0f  // Offset from X axis to end effector in mm
+#define DIST    180.0f // Length of the robot arm in mm
+#define GAMMAX  76.9044f  // Offset of alphaX in º
+#define GAMMAY  77.7114f  // Offset of alphaY in º
+#define GAMMAZ  22.5280f  // Offset of alphaZ in º
+#define LY      261.6f  // Distance from Y axis to X arm base in mm
+#define LX      263.6f  // Distance from X axis to Y arm base in mm
+#define DX      85.7f // Distance from X axis to Z arm base in mm
+#define DY      35.5f // Distance from Y axis to Z arm base in mm
+#define L1      40.0f  // Y Offset of X arm in mm
+#define L2      40.0f  // X Offset of Y arm in mm
+#define L3      25.0f  // X Offset of Z arm in mm
 
 #define MAX_ITERATIONS 8
 #define FK_TOL 0.01f
 #define TIME_STEP 0.001f // Time step in seconds
 
-CinematicState Kinematics::Update() {
+void Kinematics::CaptureHome() {
+    mXEncoder->SetOffset();
+    mYEncoder->SetOffset();
+    mZEncoder->SetOffset();
+    HAL_Delay(2);
+
+    CalculateKinematics();
+    mHome[0] = mPreviousState.pos[0];
+    mHome[1] = mPreviousState.pos[1];
+    mHome[2] = mPreviousState.pos[2];
+}
+
+void Kinematics::Update() {
     if(mUpdateKinematics) {
         mUpdateKinematics = false;
         CalculateKinematics();
     }
-
-    return mCurrentState;
 }
 
 void Kinematics::CalculateKinematics() {
@@ -34,7 +44,8 @@ void Kinematics::CalculateKinematics() {
     mYEncoder->ReadAngle(alphaY);
     mZEncoder->ReadAngle(alphaZ);
 
-    auto lawOfCosines = [&](float a){
+    auto lawOfCosines = [&](float a_deg){
+        const float a = a_deg * 0.01745329252f; // deg→rad
         return 2*DIST*DIST*(1 - cosf(a));
     };
 
@@ -46,52 +57,86 @@ void Kinematics::CalculateKinematics() {
     const float R = DX - L3;
     const float S = DY;
 
-    float x = mPreviousState.pos[0];
-    float y = mPreviousState.pos[1];
+    // Reduccion a una ecuacion escalar en w = z^2:
+    //   x(w) = Q - sqrt(B - w)      dx/dw = 1 / (2*sqrt(B - w))
+    //   y(w) = P - sqrt(A - w)      dy/dw = 1 / (2*sqrt(A - w))
+    //   g(w) = (R + x)^2 + (S + y)^2 - C
+    //   g'(w) = (R + x)/sqrt(B - w) + (S + y)/sqrt(A - w)
+    // Cotas del modelo: z^2 <= A y z^2 <= B  =>  w en [0, min(A, B)]
+    float x = 0.0f, y = 0.0f;
+    auto evalG = [&](float w, float& g, float& dg) {
+        const float ra = sqrtf(fmaxf(A - w, 0.0f));
+        const float rb = sqrtf(fmaxf(B - w, 0.0f));
+        x = Q - rb;
+        y = P - ra;
+        const float Rx = R + x;
+        const float Sy = S + y;
+        g = Rx*Rx + Sy*Sy - C;
+        dg = 0.0f;
+        if (rb > 1e-6f) dg += Rx / rb;
+        if (ra > 1e-6f) dg += Sy / ra;
+    };
+
+    float lo = 0.0f;
+    float hi = fminf(A, B);
+    float gLo, gHi, dg;
+    evalG(lo, gLo, dg);
+    evalG(hi, gHi, dg);
+    if (gLo * gHi > 0.0f)
+        return; // sin raiz en el bracket -> lecturas de encoder inconsistentes
+
+    // Warm start: w del ciclo anterior, saturado al bracket
+    float w = mPreviousState.pos[2] * mPreviousState.pos[2];
+    if (w < lo) w = lo;
+    if (w > hi) w = hi;
 
     bool converged = false;
     for(int i = 0; i < MAX_ITERATIONS; i++) {
-        const float Py = P - y;
-        const float Qx = Q - x;
-        const float Rx = R + x;
-        const float Sy = S + y;
-
-        const float F1 = Py*Py - Qx*Qx - A + B;
-        const float F2 = Rx*Rx + Sy*Sy - C;
-        if (fabsf(F1) + fabsf(F2) < FK_TOL) {
+        float g;
+        evalG(w, g, dg);
+        if (fabsf(g) < FK_TOL) {
             converged = true;
             break;
         }
 
-        const float J00 = 2.0f * Qx;
-        const float J01 = -2.0f * Py;
-        const float J10 = 2.0f * Rx;
-        const float J11 = 2.0f * Sy;
+        // Mantener el bracket
+        if (gLo * g < 0.0f) {
+            hi = w;
+        } else {
+            lo = w;
+            gLo = g;
+        }
 
-        const float detJ = J00 * J11 - J01 * J10;
-        if (fabsf(detJ) < 1e-6f)
-            break;
-
-        x -= (J11 * F1 - J01 * F2) / detJ;
-        y -= (-J10 * F1 + J00 * F2) / detJ;
+        float wn;
+        if (fabsf(dg) > 1e-9f) {
+            wn = w - g / dg;
+            if (!(wn > lo && wn < hi))  // Newton se sale -> biseccion
+                wn = 0.5f * (lo + hi);
+        } else {
+            wn = 0.5f * (lo + hi);
+        }
+        w = wn;
     }
 
     if(!converged)
         return;
 
-    const float Py = P - y;
-    float zz = A - Py*Py;
-    if(zz < 0.0f)
-        zz = 0.0f;
-    const float z = sqrtf(zz);
+    const float z = sqrtf(fmaxf(w, 0.0f));
 
-    mCurrentState.pos[0] = x;
-    mCurrentState.pos[1] = y;
-    mCurrentState.pos[2] = z;
-    mCurrentState.vel[0] = (mCurrentState.pos[0] - mPreviousState.pos[0]) / TIME_STEP;
-    mCurrentState.vel[1] = (mCurrentState.pos[1] - mPreviousState.pos[1]) / TIME_STEP;
-    mCurrentState.vel[2] = (mCurrentState.pos[2] - mPreviousState.pos[2]) / TIME_STEP;
+    // salida restada (cosmético)
+    mCurrentState.pos[0] = x - mHome[0];
+    mCurrentState.pos[1] = y - mHome[1];
+    mCurrentState.pos[2] = z - mHome[2];
+    mCurrentState.vel[0] = (x - mPreviousState.pos[0]) / TIME_STEP;
+    mCurrentState.vel[1] = (y - mPreviousState.pos[1]) / TIME_STEP;
+    mCurrentState.vel[2] = (z - mPreviousState.pos[2]) / TIME_STEP;
 
-    mPreviousState = mCurrentState;
+    // semilla Newton: pose CRUDA
+    mPreviousState.pos[0] = x;
+    mPreviousState.pos[1] = y;
+    mPreviousState.pos[2] = z;
+}
 
+std::shared_ptr<IKinematics> MakeIKinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder){
+    return std::make_shared<Kinematics>(xEncoder, yEncoder, zEncoder);
 }
