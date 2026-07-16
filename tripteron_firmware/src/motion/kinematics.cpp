@@ -18,9 +18,9 @@
 #define TIME_STEP 0.001f // Time step in seconds
 
 void Kinematics::CaptureHome() {
-    mXEncoder->SetOffset();
-    mYEncoder->SetOffset();
-    mZEncoder->SetOffset();
+    if (!mXEncoder->SetOffset()) return;
+    if (!mYEncoder->SetOffset()) return;
+    if (!mZEncoder->SetOffset()) return;
     HAL_Delay(2);
 
     CalculateKinematics();
@@ -38,11 +38,10 @@ void Kinematics::Update() {
 
 void Kinematics::CalculateKinematics() {
 
-    float alphaX, alphaY, alphaZ;
-
-    mXEncoder->ReadAngle(alphaX);
-    mYEncoder->ReadAngle(alphaY);
-    mZEncoder->ReadAngle(alphaZ);
+    float alphaX = 0.0f, alphaY = 0.0f, alphaZ = 0.0f;
+    if (!mXEncoder->ReadAngle(alphaX)) return;
+    if (!mYEncoder->ReadAngle(alphaY)) return;
+    if (!mZEncoder->ReadAngle(alphaZ)) return;
 
     auto lawOfCosines = [&](float a_deg){
         const float a = a_deg * 0.01745329252f; // deg→rad

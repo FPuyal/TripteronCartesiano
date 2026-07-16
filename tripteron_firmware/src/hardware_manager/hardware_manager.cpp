@@ -19,17 +19,26 @@
 #include <memory>
 
 extern "C" void SystemClock_Config(void);
+static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin);
 
 void HardwareManager::InitHardware() {
     SystemClock_Config();
 
     MX_GPIO_Init();
+
     MX_TIM1_Init();
     MX_TIM2_Init();
+
+    I2C_BusRecovery(GPIOB, GPIO_PIN_8, GPIOB, GPIO_PIN_9);
+    I2C_BusRecovery(GPIOB, GPIO_PIN_10, GPIOB, GPIO_PIN_3);
+    I2C_BusRecovery(GPIOA, GPIO_PIN_8, GPIOC, GPIO_PIN_9);
+
     MX_I2C1_Init();
     MX_I2C2_Init();
     MX_I2C3_Init();
+
     MX_USART2_UART_Init();
+
     HAL_Delay(500);
 
     mTimers[TimerId::Tim1] = MakeITimer(&htim1);
@@ -70,6 +79,35 @@ void HardwareManager::InitHardware() {
 
     mTimers[TimerId::Tim1]->Stop();
     mTimers[TimerId::Tim2]->Stop();
+}
+
+static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin) {
+    GPIO_InitTypeDef g = {0};
+    g.Mode  = GPIO_MODE_OUTPUT_OD;
+    g.Pull  = GPIO_PULLUP;
+    g.Speed = GPIO_SPEED_FREQ_LOW;
+
+    g.Pin = sclPin;  HAL_GPIO_Init(sclPort, &g);
+    g.Pin = sdaPin;  HAL_GPIO_Init(sdaPort, &g);
+
+    HAL_GPIO_WritePin(sclPort, sclPin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(sdaPort, sdaPin, GPIO_PIN_SET);
+
+    for (int i = 0; i < 9; i++) {
+        HAL_GPIO_WritePin(sclPort, sclPin, GPIO_PIN_RESET);
+        HAL_Delay(1);
+        HAL_GPIO_WritePin(sclPort, sclPin, GPIO_PIN_SET);
+        HAL_Delay(1);
+        if (HAL_GPIO_ReadPin(sdaPort, sdaPin) == GPIO_PIN_SET) break;
+    }
+
+    // STOP manual
+    HAL_GPIO_WritePin(sdaPort, sdaPin, GPIO_PIN_RESET);
+    HAL_Delay(1);
+    HAL_GPIO_WritePin(sclPort, sclPin, GPIO_PIN_SET);
+    HAL_Delay(1);
+    HAL_GPIO_WritePin(sdaPort, sdaPin, GPIO_PIN_SET);
+    HAL_Delay(1);
 }
 
 std::shared_ptr<ITimer> HardwareManager::GetTimer(TimerId id) {

@@ -11,4 +11,5 @@ public:
 
 private:
     std::shared_ptr<II2CWrapper> mI2cWrapper;
+    uint16_t mHomeRaw = 0;
 };
