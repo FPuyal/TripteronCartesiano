@@ -57,14 +57,30 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define STEP_Pin GPIO_PIN_0
-#define STEP_GPIO_Port GPIOA
-#define DIR_Pin GPIO_PIN_1
-#define DIR_GPIO_Port GPIOA
-#define EN_Pin GPIO_PIN_2
-#define EN_GPIO_Port GPIOA
-#define END_STOP_X_Pin GPIO_PIN_4
-#define END_STOP_X_GPIO_Port GPIOA
+#define EN_X_Pin GPIO_PIN_4
+#define EN_X_GPIO_Port GPIOE
+#define DIR_X_Pin GPIO_PIN_5
+#define DIR_X_GPIO_Port GPIOE
+#define STEP_X_Pin GPIO_PIN_6
+#define STEP_X_GPIO_Port GPIOE
+#define END_STOP_X_Pin GPIO_PIN_13
+#define END_STOP_X_GPIO_Port GPIOC
+#define END_STOP_Y_Pin GPIO_PIN_14
+#define END_STOP_Y_GPIO_Port GPIOC
+#define END_STOP_Z_Pin GPIO_PIN_15
+#define END_STOP_Z_GPIO_Port GPIOC
+#define EN_Z_Pin GPIO_PIN_4
+#define EN_Z_GPIO_Port GPIOD
+#define DIR_Z_Pin GPIO_PIN_5
+#define DIR_Z_GPIO_Port GPIOD
+#define STEP_Z_Pin GPIO_PIN_6
+#define STEP_Z_GPIO_Port GPIOD
+#define EN_Y_Pin GPIO_PIN_4
+#define EN_Y_GPIO_Port GPIOB
+#define DIR_Y_Pin GPIO_PIN_5
+#define DIR_Y_GPIO_Port GPIOB
+#define STEP_Y_Pin GPIO_PIN_6
+#define STEP_Y_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

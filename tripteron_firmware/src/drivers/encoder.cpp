@@ -3,8 +3,6 @@
 #include <memory>
 
 #define AS5600_RAW_ANGLE 0x0C
-#define AS5600_ANGLE 0x0E
-#define ZPOS_H 0x01
 
 bool Encoder::SetOffset(){
     uint16_t init_raw_angle;
@@ -12,18 +10,19 @@ bool Encoder::SetOffset(){
     mI2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
     if(!mI2cWrapper->Read(init_raw_angle))
         return false;
-    mI2cWrapper->SetMemAddress(ZPOS_H);
-    if(mI2cWrapper->Write(init_raw_angle))
-        return false;
+    mHomeRaw = init_raw_angle;
     return true;
 }
 
-bool Encoder::ReadAngle(double& angle){
+bool Encoder::ReadAngle(float& angle){
     uint16_t raw_angle = 0;
 
-    mI2cWrapper->SetMemAddress(AS5600_ANGLE);
+    mI2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
     if(mI2cWrapper->Read(raw_angle)) {
-        angle = raw_angle * 360.0 / 4096.0;
+        int32_t delta = (int32_t)raw_angle - (int32_t)mHomeRaw;
+        delta = (delta + 4096) % 4096;
+        angle = delta * 360.0f / 4096.0f;
+        if(angle > 180.0f) angle -= 360.0f;
         return true;
     }
     return false;

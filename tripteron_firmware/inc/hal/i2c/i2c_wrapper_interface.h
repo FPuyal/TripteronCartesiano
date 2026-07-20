@@ -12,7 +12,4 @@ public:
     virtual void SetMemAddress(uint8_t addr) = 0;
 };
 
-std::shared_ptr<II2CWrapper> MakeII2CWrapper(
-    I2C_HandleTypeDef* hi2c,
-    uint16_t devAddress
-);
+std::shared_ptr<II2CWrapper> MakeII2CWrapper(I2C_HandleTypeDef* hi2c, uint16_t devAddress);

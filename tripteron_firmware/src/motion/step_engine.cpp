@@ -1,9 +1,15 @@
 #include "step_engine.h"
 
-void StepEngine::SetSteps(int16_t steps[3]) {
-    mSteps[0] = steps[0];
-    mSteps[1] = steps[1];
-    mSteps[2] = steps[2];
+void StepEngine::SetXSteps(int16_t steps) {
+    mSteps[0] = steps;
+}
+
+void StepEngine::SetYSteps(int16_t steps) {
+    mSteps[1] = steps;
+}
+
+void StepEngine::SetZSteps(int16_t steps) {
+    mSteps[2] = steps;
 }
 
 void StepEngine::Update() {
@@ -40,8 +46,12 @@ void StepEngine::Update() {
 
 void StepEngine::Tick() {
     // Prueba para el TMCX
-    mTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x01);
-    mTmc->SetStep(mBuffer[mBufferIndex] & 0x01);
+    mXTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x01);
+    mXTmc->SetStep(mBuffer[mBufferIndex] & 0x01);
+    mYTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x02);
+    mYTmc->SetStep(mBuffer[mBufferIndex] & 0x02);
+    mZTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x04);
+    mZTmc->SetStep(mBuffer[mBufferIndex] & 0x04);
 
     mBufferIndex = (mBufferIndex + 1) % mBufferSize;
 
@@ -49,6 +59,6 @@ void StepEngine::Tick() {
         mBufferFlag = true;
 }
 
-std::unique_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, ITmc& xTmc) {
-    return std::make_unique<StepEngine>(threshold, xTmc);
+std::unique_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
+    return std::make_unique<StepEngine>(threshold, xTmc, yTmc, zTmc);
 }
