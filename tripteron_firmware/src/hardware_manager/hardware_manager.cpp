@@ -2,7 +2,7 @@
 
 // STM HAL includes
 #include "gpio.h"
-#include "stm32f401xe.h"
+#include "stm32f407xx.h"
 #include "tim.h"
 #include "usart.h"
 #include "i2c.h"
@@ -37,7 +37,7 @@ void HardwareManager::InitHardware() {
     MX_I2C2_Init();
     MX_I2C3_Init();
 
-    MX_USART2_UART_Init();
+    MX_USART1_UART_Init();
 
     HAL_Delay(500);
 
@@ -56,7 +56,7 @@ void HardwareManager::InitHardware() {
             MakeIGpioOutput(GPIOE, GPIO_PIN_6),
             MakeIGpioOutput(GPIOE, GPIO_PIN_5),
             MakeIGpioOutput(GPIOE, GPIO_PIN_4),
-            MakeIUart(&huart2),
+            MakeIUart(&huart1),
             0x00,
             4
     );
@@ -64,7 +64,7 @@ void HardwareManager::InitHardware() {
             MakeIGpioOutput(GPIOB, GPIO_PIN_6),
             MakeIGpioOutput(GPIOB, GPIO_PIN_5),
             MakeIGpioOutput(GPIOB, GPIO_PIN_4),
-            MakeIUart(&huart2),
+            MakeIUart(&huart1),
             0x01,
             4
     );
@@ -72,7 +72,7 @@ void HardwareManager::InitHardware() {
             MakeIGpioOutput(GPIOD, GPIO_PIN_6),
             MakeIGpioOutput(GPIOD, GPIO_PIN_5),
             MakeIGpioOutput(GPIOD, GPIO_PIN_4),
-            MakeIUart(&huart2),
+            MakeIUart(&huart1),
             0x02,
             1
     );

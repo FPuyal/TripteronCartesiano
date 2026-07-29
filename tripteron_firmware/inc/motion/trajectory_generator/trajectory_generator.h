@@ -6,11 +6,14 @@ class TrajectoryGenerator : public ITrajectoryGenerator {
 public:
     explicit TrajectoryGenerator(TrajectoryConfig config) : mConfig(config) {}
     bool SetTrajectoryProfile(MotionState init, MotionState final);
-    bool Update(double dt) override;
+    void RequestUpdate() override { mUpdateTrajectory = true; }
+    bool Update() override;
     void Reset() override;
-    bool GetDirection() const override { return mDir > 0.0; }
-    double GetPosition() const override { return mPos; }
-    double GetVelocity() const override { return mVel; }
+
+    float GetDirection() const override { return mDir; }
+    float GetPosition() const override { return mPos; }
+    float GetVelocity() const override { return mVel; }
+
     bool IsFinished() const override { return mFinished; }
 
 private:
@@ -25,15 +28,17 @@ private:
     std::size_t mCurrentPhase = 0;
 
     // Initial phase variables
-    double mPhaseTime = 0.0;
-    double mPos0 = 0.0;
-    double mVel0 = 0.0;
+    float mPhaseTime = 0.0;
+    float mPos0 = 0.0;
+    float mVel0 = 0.0;
 
     // Actual state variables
-    double mDir = 0.0;
-    double mPos = 0.0;
-    double mVel = 0.0;
-    double mAcc = 0.0;
+    volatile float mDir = 0.0;
+    volatile float mPos = 0.0;
+    volatile float mVel = 0.0;
+    float mAcc = 0.0;
 
-    bool mFinished = true;
+    volatile bool mFinished = true;
+
+    volatile bool mUpdateTrajectory = false;
 };
