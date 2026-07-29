@@ -1,6 +1,7 @@
 #include "hardware_manager_interface.h"
 #include "step_engine_interface.h"
 #include "kinematics_interface.h"
+#include "trajectory_generator_interface.h"
 
 #include "utils.h"
 
@@ -14,6 +15,8 @@ int main(){
 
     extern IStepEngine* stepEngineInstance;
     extern IKinematics* kinematicsInstance;
+    extern ITrajectoryGenerator* trajectoryGeneratorInstance;
+
 
     auto stepEngine = MakeIStepEngine(
         19200,
@@ -37,49 +40,48 @@ int main(){
     bool homingFlagY = false;
     bool homingFlagZ = false;
 
-    stepEngine->SetXSteps(-500);
     while(!homingFlagX) {
-        if(hardwareManager->GetEndStop(EndStopId::XEnd)->Read()) {
-            stepEngine->SetXSteps(500);
+        if(!hardwareManager->GetEndStop(EndStopId::XEnd)->Read()) {
+            stepEngine->SetXSteps(-500);
         } else {
             stepEngine->SetXSteps(0);
             homingFlagX = true;
         }
     }
 
-    stepEngine->SetYSteps(-500);
     while(!homingFlagY) {
-        if(hardwareManager->GetEndStop(EndStopId::YEnd)->Read()) {
-            stepEngine->SetYSteps(500);
+        if(!hardwareManager->GetEndStop(EndStopId::YEnd)->Read()) {
+            stepEngine->SetYSteps(-500);
         } else {
             stepEngine->SetYSteps(0);
             homingFlagY = true;
         }
     }
 
-    stepEngine->SetZSteps(-500);
     while(!homingFlagZ) {
-        if(hardwareManager->GetEndStop(EndStopId::ZEnd)->Read()) {
-            stepEngine->SetZSteps(500);
+        if(!hardwareManager->GetEndStop(EndStopId::ZEnd)->Read()) {
+            stepEngine->SetZSteps(-500);
         } else {
             stepEngine->SetZSteps(0);
             homingFlagZ = true;
         }
     }
 
-    hardwareManager->GetTmc(TmcId::XTmc)->Disable();
-    hardwareManager->GetTmc(TmcId::YTmc)->Disable();
-    hardwareManager->GetTmc(TmcId::ZTmc)->Disable();
+    auto trajectoryGenerator = MakeITrajectoryGenerator(TrajectoryConfig {
+        240.0,
+        240.0
+    });
 
-    hardwareManager->GetTimer(TimerId::Tim1)->Stop();
+    trajectoryGeneratorInstance = trajectoryGenerator.get();
 
-    hardwareManager->GetTimer(TimerId::Tim2)->Stop();
-    kinematics->CaptureHome();
-    hardwareManager->GetTimer(TimerId::Tim2)->Start();
+    trajectoryGenerator->SetTrajectoryProfile(
+        MotionState { 0.0, 0.0 },
+        MotionState { 150.0, 0.0 }
+    );
 
     while(1){
-        kinematics->Update();
-        KinematicState state = kinematics->GetCurrentState();
+        trajectoryGenerator->Update();
+        stepEngine->SetXSteps(trajectoryGenerator->GetVelocity() * trajectoryGenerator->GetDirection() * 20.0);
     }
 
 }

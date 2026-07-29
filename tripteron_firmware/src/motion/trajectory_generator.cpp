@@ -7,6 +7,8 @@
 #include <limits>
 #include <vector>
 
+#define UPDATE_DT 0.001 // Se define en base a la frecuancia de interrupción del TIM2
+
 bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState final) {
     if(init.pos < 0.0 || final.pos < 0.0 || init.vel < 0.0 || final.vel < 0.0)
         return false;
@@ -36,7 +38,7 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     // mProfile = TrayectoryProfileType::NONE;
     mPhases.clear();
 
-    const double dist = std::abs(mFinal.pos - mInit.pos);
+    const float dist = std::abs(mFinal.pos - mInit.pos);
 
     auto assignProfile = [this](TrayectoryProfileType profileType) -> bool {
         mProfile = profileType;
@@ -46,14 +48,14 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
         return GeneratePhases();
     };
 
-    auto fits = [this, dist](double initVel, double finalVel) -> bool {
-        const double d = CalculateRampDistance(initVel, finalVel, mConfig);
+    auto fits = [this, dist](float initVel, float finalVel) -> bool {
+        const float d = CalculateRampDistance(initVel, finalVel, mConfig);
         return d > eps && d <= dist + eps;
     };
 
-    auto fitsCombined = [this, dist](double initVel, double maxVel, double finalVel) -> bool {
-        const double d1 = CalculateRampDistance(initVel, maxVel, mConfig);
-        const double d2 = CalculateRampDistance(maxVel, finalVel, mConfig);
+    auto fitsCombined = [this, dist](float initVel, float maxVel, float finalVel) -> bool {
+        const float d1 = CalculateRampDistance(initVel, maxVel, mConfig);
+        const float d2 = CalculateRampDistance(maxVel, finalVel, mConfig);
         return d1 > eps && d2 > eps && (d1 + d2) <= dist + eps;
     };
 
@@ -72,7 +74,7 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     if (fits(mInit.vel, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
 
-    double max_vel_aux = sqrt(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
+    float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
     if(fitsCombined(mInit.vel, max_vel_aux, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRIANGULAR);
 
@@ -82,11 +84,11 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
 bool TrajectoryGenerator::GeneratePhases() {
     mPhases.clear();
 
-    auto addRampProfile = [this](double initVel, double finalVel) -> bool {
+    auto addRampProfile = [this](float initVel, float finalVel) -> bool {
         if (initVel < 0.0 || finalVel < 0.0)
             return false;
 
-        double accleSign = (finalVel >= initVel) ? 1.0 : -1.0;
+        float accleSign = (finalVel >= initVel) ? 1.0 : -1.0;
 
         mPhases.push_back(TrayectoryPhase {
             accleSign * mConfig.accMax,
@@ -98,15 +100,15 @@ bool TrajectoryGenerator::GeneratePhases() {
         return true;
     };
 
-    auto addCruisePhase = [this](double cruiseVel, TrayectoryProfileType profileType) -> bool {
+    auto addCruisePhase = [this](float cruiseVel, TrayectoryProfileType profileType) -> bool {
         if (cruiseVel <= eps || profileType == TrayectoryProfileType::TRIANGULAR)
             return false;
 
-        double pos_aux = mFinal.pos;
-        double dist_aux = (mFinal.pos - mInit.pos) * mDir;
+        float pos_aux = mFinal.pos;
+        float dist_aux = (mFinal.pos - mInit.pos) * mDir;
 
         if(profileType == TrayectoryProfileType::TRAPEZOIDAL) {
-            double decelDist = CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
+            float decelDist = CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
             dist_aux -= CalculateRampDistance(mInit.vel, cruiseVel, mConfig);
             dist_aux -= decelDist;
             pos_aux  -= (mDir * decelDist);
@@ -147,8 +149,8 @@ bool TrajectoryGenerator::GeneratePhases() {
             return (addRampProfile(mInit.vel, mFinal.vel) &&
                 addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL));
         case TrayectoryProfileType::TRIANGULAR : {
-            double dist = abs(mFinal.pos - mInit.pos);
-            double max_vel_aux = sqrt(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
+            float dist = fabsf(mFinal.pos - mInit.pos);
+            float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
             return (addRampProfile(mInit.vel, max_vel_aux) &&
                 addRampProfile(max_vel_aux, mFinal.vel));
         }
@@ -157,50 +159,55 @@ bool TrajectoryGenerator::GeneratePhases() {
     }
 }
 
-bool TrajectoryGenerator::Update(double dt) {
-    if(dt <= 0.0 || mPhases.empty() || mFinished)
-        return false;
+bool TrajectoryGenerator::Update() {
+    if(mUpdateTrajectory) {
+        mUpdateTrajectory = false;
 
-    mPhaseTime += dt;
-    mAcc = mPhases[mCurrentPhase].accLim;
-    mVel = mVel0 + mAcc * mPhaseTime;
-    mPos = mPos0 + mDir * (mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime);
+        if(mPhases.empty() || mFinished)
+            return false;
 
-    auto advancePhase = [this]()->void {
-        mCurrentPhase++;
-        if(mCurrentPhase >= mPhases.size()) {
-            mFinished = true;
-            mPos = mFinal.pos;
-            mVel = mFinal.vel;
-            mAcc = 0.0;
-            return;
+        mPhaseTime += UPDATE_DT;
+        mAcc = mPhases[mCurrentPhase].accLim;
+        mVel = mVel0 + mAcc * mPhaseTime;
+        mPos = mPos0 + mDir * (mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime);
+
+        auto advancePhase = [this]()->void {
+            mCurrentPhase++;
+            if(mCurrentPhase >= mPhases.size()) {
+                mFinished = true;
+                mPos = mFinal.pos;
+                mVel = mFinal.vel;
+                mAcc = 0.0;
+                return;
+            }
+            mPhaseTime = 0.0;
+            mPos0 = mPos;
+            mVel0 = mVel;
+        };
+
+        if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
+            float sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
+            if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
+                mVel = mPhases[mCurrentPhase].velLim;
+                mAcc = 0.0;
+                advancePhase();
+                return true;
+            }
         }
-        mPhaseTime = 0.0;
-        mPos0 = mPos;
-        mVel0 = mVel;
-    };
 
-    if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
-        double sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
-        if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
-            mVel = mPhases[mCurrentPhase].velLim;
-            mAcc = 0.0;
-            advancePhase();
-            return true;
+        if(mPhases[mCurrentPhase].endCondition == EndCondition::DIST){
+            if(mDir * (mPhases[mCurrentPhase].posLim - mPos) <= eps) {
+                mPos = mPhases[mCurrentPhase].posLim;
+                mVel = mPhases[mCurrentPhase].velLim;
+                mAcc = 0.0;
+                advancePhase();
+                return true;
+            }
         }
+
+        return true;
     }
-
-    if(mPhases[mCurrentPhase].endCondition == EndCondition::DIST){
-        if(mDir * (mPhases[mCurrentPhase].posLim - mPos) <= eps) {
-            mPos = mPhases[mCurrentPhase].posLim;
-            mVel = mPhases[mCurrentPhase].velLim;
-            mAcc = 0.0;
-            advancePhase();
-            return true;
-        }
-    }
-
-    return true;
+    return false;
 }
 
 void TrajectoryGenerator::Reset() {

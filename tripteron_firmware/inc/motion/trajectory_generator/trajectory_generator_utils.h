@@ -3,17 +3,17 @@
 #include <vector>
 
 struct MotionState {
-    double pos;
-    double vel;
+    float pos;
+    float vel;
 };
 
-inline MotionState operator*(const MotionState& a, double scalar) {
+inline MotionState operator*(const MotionState& a, float scalar) {
     return MotionState{a.pos * scalar, a.vel * scalar};
 }
 
 struct TrajectoryConfig {
-    double velMax;
-    double accMax;
+    float velMax;
+    float accMax;
 };
 
 enum class TrayectoryProfileType {
@@ -29,16 +29,16 @@ enum class EndCondition {
 };
 
 struct TrayectoryPhase {
-    double accLim;
-    double velLim;
-    double posLim;
+    float accLim;
+    float velLim;
+    float posLim;
     EndCondition endCondition;
 };
 
-constexpr double eps = 1e-3;
+constexpr float eps = 1e-3;
 
-inline double CalculateRampDistance(double initVel, double finalVel, TrajectoryConfig config) {
-    double distance = finalVel >= initVel ?
+inline float CalculateRampDistance(float initVel, float finalVel, TrajectoryConfig config) {
+    float distance = finalVel >= initVel ?
         (finalVel * finalVel - initVel * initVel) / (2.0 * config.accMax) :
         (initVel * initVel - finalVel * finalVel) / (2.0 * config.accMax);
     return distance;
