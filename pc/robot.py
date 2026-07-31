@@ -12,12 +12,15 @@ en un CSV nuevo por ejecucion.
 Trama: [0xAA][ID][PAYLOAD]. Floats little-endian, sin LEN ni CRC.
 """
 
+import os
 import struct
 import sys
 import time
 from datetime import datetime
 
 import serial
+
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 
 PORT = 'COM6'
 BAUDRATE = 115200
@@ -58,7 +61,8 @@ def read_byte(ser):
 
 def capture(ser):
     """Lee tramas hasta recibir END. Escribe la telemetria en un CSV."""
-    filename = 'telemetry_' + datetime.now().strftime('%Y%m%d_%H%M%S') + '.csv'
+    os.makedirs(LOG_DIR, exist_ok=True)
+    filename = os.path.join(LOG_DIR, 'telemetry_' + datetime.now().strftime('%Y%m%d_%H%M%S') + '.csv')
     f = None
     t0 = None
     samples = 0
