@@ -6,6 +6,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "i2c.h"
+#include "usb_device.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
 
@@ -15,8 +16,11 @@
 #include "uart_interface.h"
 #include "tmc_interface.h"
 #include "gpio_input_interface.h"
+#include "usb_cdc_interface.h"
 
 #include <memory>
+
+extern IUsbCdc* usbCdcInstance;
 
 extern "C" void SystemClock_Config(void);
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin);
@@ -79,6 +83,11 @@ void HardwareManager::InitHardware() {
 
     mTimers[TimerId::Tim1]->Stop();
     mTimers[TimerId::Tim2]->Stop();
+
+    mUsbCdc = MakeIUsbCdc();
+    usbCdcInstance = mUsbCdc.get();
+
+    MX_USB_DEVICE_Init();
 }
 
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin) {
@@ -124,6 +133,10 @@ std::shared_ptr<IEncoder> HardwareManager::GetEncoder(EncoderId id) {
 
 std::shared_ptr<IGpioInput> HardwareManager::GetEndStop(EndStopId id) {
     return mEndStops[id];
+}
+
+std::shared_ptr<IUsbCdc> HardwareManager::GetUsbCdc() {
+    return mUsbCdc;
 }
 
 std::shared_ptr<IHardwareManager> MakeIHardwareManager() {

@@ -66,6 +66,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/hal/timer
     tripteron_firmware/inc/hal/i2c
     tripteron_firmware/inc/hal/uart
+    tripteron_firmware/inc/hal/usb_cdc
+    tripteron_firmware/inc/comms
     tripteron_firmware/inc/drivers/tmc
     tripteron_firmware/inc/drivers/encoder
     tripteron_firmware/inc/hardware_manager
