@@ -59,6 +59,6 @@ void StepEngine::Tick() {
         mBufferFlag = true;
 }
 
-std::unique_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
-    return std::make_unique<StepEngine>(threshold, xTmc, yTmc, zTmc);
+std::shared_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
+    return std::make_shared<StepEngine>(threshold, xTmc, yTmc, zTmc);
 }

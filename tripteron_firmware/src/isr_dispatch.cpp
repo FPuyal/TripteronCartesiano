@@ -1,14 +1,13 @@
-#include "step_engine.h"
 #include "stm32f407xx.h"
 
 #include "step_engine_interface.h"
 #include "kinematics_interface.h"
-#include "trajectory_generator_interface.h"
+#include "motion_controller_interface.h"
 #include "usb_cdc_interface.h"
 
 IStepEngine* stepEngineInstance = nullptr;
 IKinematics* kinematicsInstance = nullptr;
-ITrajectoryGenerator* trajectoryGeneratorInstance = nullptr;
+IMotionController* motionControllerInstance = nullptr;
 IUsbCdc* usbCdcInstance = nullptr;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -16,10 +15,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if(stepEngineInstance) stepEngineInstance->Tick();
     }
     if(htim->Instance == TIM2) {
-        if(trajectoryGeneratorInstance) trajectoryGeneratorInstance->RequestUpdate();
+        if(motionControllerInstance) motionControllerInstance->RequestUpdate();
         if(stepEngineInstance) stepEngineInstance->Update();
         if(kinematicsInstance) kinematicsInstance->RequestUpdate();
-
     }
 }
 

@@ -78,7 +78,7 @@ void HardwareManager::InitHardware() {
             MakeIGpioOutput(GPIOD, GPIO_PIN_4),
             MakeIUart(&huart2),
             0x01,
-            4
+            1
     );
 
     mTimers[TimerId::Tim1]->Stop();

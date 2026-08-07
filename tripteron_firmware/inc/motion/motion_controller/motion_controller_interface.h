@@ -1,0 +1,19 @@
+#pragma once
+
+#include "step_engine_interface.h"
+#include "motion_controller_utils.h"
+
+#include <array>
+#include <memory>
+
+class IMotionController {
+public:
+    virtual ~IMotionController() = default;
+    virtual bool MoveTo(const MotionData posTarget) = 0;
+    virtual void RequestUpdate() = 0;
+    virtual bool Update() = 0;
+    virtual MotionData GetPosition() = 0;
+    virtual MotionData GetVelocity() = 0;
+};
+
+std::shared_ptr<IMotionController> MakeIMotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig);

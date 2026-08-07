@@ -9,9 +9,11 @@
 
 #define UPDATE_DT 0.001 // Se define en base a la frecuancia de interrupción del TIM2
 
-bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState final) {
-    if(init.pos < 0.0 || final.pos < 0.0 || init.vel < 0.0 || final.vel < 0.0)
+bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState final, TrajectoryConfig config) {
+    if(init.pos < 0.0 || final.pos < 0.0 || init.vel < 0.0 || final.vel < 0.0 || final.pos < init.pos)
         return false;
+
+    mConfig = config;
 
     if(init.vel > mConfig.velMax)
         init.vel = mConfig.velMax;
@@ -29,16 +31,13 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     mPos0 = mInit.pos;
     mVel0 = mInit.vel;
 
-    mDir = (mFinal.pos >= mInit.pos) ? 1.0 : -1.0;
     mPos = mInit.pos;
     mVel = mInit.vel;
     mAcc = 0.0;
-    // mJerk = 0.0;
 
-    // mProfile = TrayectoryProfileType::NONE;
     mPhases.clear();
 
-    const float dist = std::abs(mFinal.pos - mInit.pos);
+    const float dist = mFinal.pos - mInit.pos;
 
     auto assignProfile = [this](TrayectoryProfileType profileType) -> bool {
         mProfile = profileType;
@@ -105,20 +104,21 @@ bool TrajectoryGenerator::GeneratePhases() {
             return false;
 
         float pos_aux = mFinal.pos;
-        float dist_aux = (mFinal.pos - mInit.pos) * mDir;
+        float dist_aux = (mFinal.pos - mInit.pos);
 
         if(profileType == TrayectoryProfileType::TRAPEZOIDAL) {
             float decelDist = CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
             dist_aux -= CalculateRampDistance(mInit.vel, cruiseVel, mConfig);
             dist_aux -= decelDist;
-            pos_aux  -= (mDir * decelDist);
+            pos_aux  -= decelDist;
         }
         if(profileType == TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) {
             dist_aux -= mInit.vel <= mFinal.vel ?
                 CalculateRampDistance(mInit.vel, cruiseVel, mConfig) :
                 CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
-            pos_aux = mInit.vel <= mFinal.vel ? pos_aux :
-                pos_aux - mDir * CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
+            pos_aux -= mInit.vel <= mFinal.vel ?
+                0.0f:
+                CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
         }
 
         if (dist_aux < -eps)
@@ -149,7 +149,7 @@ bool TrajectoryGenerator::GeneratePhases() {
             return (addRampProfile(mInit.vel, mFinal.vel) &&
                 addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL));
         case TrayectoryProfileType::TRIANGULAR : {
-            float dist = fabsf(mFinal.pos - mInit.pos);
+            float dist = mFinal.pos - mInit.pos;
             float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
             return (addRampProfile(mInit.vel, max_vel_aux) &&
                 addRampProfile(max_vel_aux, mFinal.vel));
@@ -160,52 +160,46 @@ bool TrajectoryGenerator::GeneratePhases() {
 }
 
 bool TrajectoryGenerator::Update() {
-    if(mUpdateTrajectory) {
-        mUpdateTrajectory = false;
+    if(mPhases.empty() || mFinished)
+        return false;
 
-        if(mPhases.empty() || mFinished)
-            return false;
+    mPhaseTime += UPDATE_DT;
+    mAcc = mPhases[mCurrentPhase].accLim;
+    mVel = mVel0 + mAcc * mPhaseTime;
+    mPos = mPos0 + mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime;
 
-        mPhaseTime += UPDATE_DT;
-        mAcc = mPhases[mCurrentPhase].accLim;
-        mVel = mVel0 + mAcc * mPhaseTime;
-        mPos = mPos0 + mDir * (mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime);
-
-        auto advancePhase = [this]()->void {
-            mCurrentPhase++;
-            if(mCurrentPhase >= mPhases.size()) {
-                mFinished = true;
-                mPos = mFinal.pos;
-                mVel = mFinal.vel;
-                mAcc = 0.0;
-                return;
-            }
-            mPhaseTime = 0.0;
-            mPos0 = mPos;
-            mVel0 = mVel;
-        };
-
-        if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
-            float sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
-            if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
-                mVel = mPhases[mCurrentPhase].velLim;
-                mAcc = 0.0;
-                advancePhase();
-                return true;
-            }
+    auto advancePhase = [this]()->void {
+        mCurrentPhase++;
+        if(mCurrentPhase >= mPhases.size()) {
+            mFinished = true;
+            mPos = mFinal.pos;
+            mVel = mFinal.vel;
+            mAcc = 0.0;
+            return;
         }
+        mPhaseTime = 0.0;
+        mPos0 = mPos;
+        mVel0 = mVel;
+    };
 
-        if(mPhases[mCurrentPhase].endCondition == EndCondition::DIST){
-            if(mDir * (mPhases[mCurrentPhase].posLim - mPos) <= eps) {
-                mPos = mPhases[mCurrentPhase].posLim;
-                mVel = mPhases[mCurrentPhase].velLim;
-                mAcc = 0.0;
-                advancePhase();
-                return true;
-            }
+    if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
+        float sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
+        if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
+            mVel = mPhases[mCurrentPhase].velLim;
+            mAcc = 0.0;
+            advancePhase();
+            return true;
         }
+    }
 
-        return true;
+    if(mPhases[mCurrentPhase].endCondition == EndCondition::DIST){
+        if((mPhases[mCurrentPhase].posLim - mPos) <= eps) {
+            mPos = mPhases[mCurrentPhase].posLim;
+            mVel = mPhases[mCurrentPhase].velLim;
+            mAcc = 0.0;
+            advancePhase();
+            return true;
+        }
     }
     return false;
 }
@@ -218,12 +212,11 @@ void TrajectoryGenerator::Reset() {
     mPos0 = 0.0;
     mVel0 = 0.0;
 
-    mDir = 0.0;
     mPos = 0.0;
     mVel = 0.0;
     mAcc = 0.0;
 }
 
-std::unique_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator(TrajectoryConfig config) {
-    return std::make_unique<TrajectoryGenerator>(config);
+std::unique_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator() {
+    return std::make_unique<TrajectoryGenerator>();
 }

@@ -1,20 +1,20 @@
 #include "hardware_manager_interface.h"
 #include "step_engine_interface.h"
 #include "kinematics_interface.h"
-#include "trajectory_generator_interface.h"
+#include "motion_controller_interface.h"
 
 #include "utils.h"
 
 #include <memory>
+
+extern IMotionController* motionControllerInstance;
+extern IStepEngine* stepEngineInstance;
 
 int main(){
 
     auto hardwareManager = MakeIHardwareManager();
 
     hardwareManager->InitHardware();
-
-    extern IStepEngine* stepEngineInstance;
-    extern ITrajectoryGenerator* trajectoryGeneratorInstance;
 
     hardwareManager->GetTmc(TmcId::XTmc)->Enable();
     hardwareManager->GetTmc(TmcId::YTmc)->Enable();
@@ -26,6 +26,17 @@ int main(){
         hardwareManager->GetTmc(TmcId::ZTmc)
     );
     stepEngineInstance = stepEngine.get();
+
+    auto motionController = MakeIMotionController(
+        stepEngine,
+        MotionConfig{
+            .pos = {200.0f, 200.0f, 200.0f},
+            .vel = {120.0f, 120.0f, 24.0f},
+            .acc = {60.0f, 60.0f, 12.0f},
+            .stepsPerMm = {20.0f, 20.0f, 25.0f}
+        }
+    );
+    motionControllerInstance = motionController.get();
 
     hardwareManager->GetTimer(TimerId::Tim1)->Start();
     hardwareManager->GetTimer(TimerId::Tim2)->Start();
@@ -61,20 +72,10 @@ int main(){
         }
     }
 
-    auto trajectoryGenerator = MakeITrajectoryGenerator(TrajectoryConfig {
-        480.0,
-        960.0
-    }); // Configuración en mm
-    trajectoryGeneratorInstance = trajectoryGenerator.get();
-
-    trajectoryGenerator->SetTrajectoryProfile(
-        MotionState { 0.0, 0.0 },
-        MotionState { 150.0, 0.0 }
-    );
+    motionController->MoveTo(MotionData{100.0f, 100.0f, 100.0f});
 
     while(1){
-        trajectoryGenerator->Update();
-        stepEngine->SetXSteps(trajectoryGenerator->GetVelocity() * trajectoryGenerator->GetDirection() * 20.0);
+        motionController->Update();
     }
 
 }
