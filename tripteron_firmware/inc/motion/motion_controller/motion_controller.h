@@ -5,11 +5,14 @@
 #include "trajectory_generator_interface.h"
 
 #include <array>
+#include <cstddef>
 #include <memory>
 
 class MotionController : public IMotionController {
 public:
     MotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig);
+    void SetSegments(MotionData* segments, std::size_t numSegments) override;
+    bool Move() override;
     bool MoveTo(const MotionData posTarget) override;
     void RequestUpdate() override { mUpdateMotion = true; }
     bool Update() override;
@@ -18,6 +21,10 @@ public:
     MotionData GetVelocity() override;
 
 private:
+    MotionData* mSegments = nullptr;
+    std::size_t mNumSegments = 0;
+    std::size_t mCurrentSegment = 0;
+
     // Estado del robot (mm, mm/s)
     MotionData mPosition = {0.0f, 0.0f, 0.0f};
     MotionData mVelocity = {0.0f, 0.0f, 0.0f};
@@ -30,6 +37,7 @@ private:
     // Límites mecánicos y conversión por eje (fijos, mecánica del robot)
     const MotionData mPosMax;
     const MotionData mVelMax;
+    const MotionData mVelMin;
     const MotionData mAccMax;
     const MotionData mStepsPerMm; // ponderación mecánica: mm/s -> tasa de StepEngine
 

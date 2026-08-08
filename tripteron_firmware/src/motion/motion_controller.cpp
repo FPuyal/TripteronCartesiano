@@ -6,12 +6,36 @@
 
 MotionController::MotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig)
         : mStepEngine(stepEngine),
-          mPosMax{motionConfig.pos.x, motionConfig.pos.y, motionConfig.pos.z},
-          mVelMax{motionConfig.vel.x, motionConfig.vel.y, motionConfig.vel.z},
-          mAccMax{motionConfig.acc.x, motionConfig.acc.y, motionConfig.acc.z},
+          mPosMax{motionConfig.posMax.x, motionConfig.posMax.y, motionConfig.posMax.z},
+          mVelMax{motionConfig.velMax.x, motionConfig.velMax.y, motionConfig.velMax.z},
+          mVelMin{motionConfig.velMin.x, motionConfig.velMin.y, motionConfig.velMin.z},
+          mAccMax{motionConfig.accMax.x, motionConfig.accMax.y, motionConfig.accMax.z},
           mStepsPerMm{motionConfig.stepsPerMm.x, motionConfig.stepsPerMm.y, motionConfig.stepsPerMm.z} {
     mTrajectoryGenerator = MakeITrajectoryGenerator();
 };
+
+void MotionController::SetSegments(MotionData* segments, std::size_t numSegments) {
+    mSegments = segments;
+    mNumSegments = numSegments;
+    mCurrentSegment = 0;
+}
+
+bool MotionController::Move() {
+    if(!mTrajectoryGenerator->IsFinished())
+        return true; // Segmento en curso, todavía hay movimiento pendiente.
+
+    if(!mSegments || mCurrentSegment >= mNumSegments)
+        return false; // No queda nada por lanzar y el último segmento ya terminó.
+
+    if(!MoveTo(mSegments[mCurrentSegment++])) {
+        mSegments = nullptr; // Aborta la cola: evita quedarse bloqueado en silencio.
+        mNumSegments = 0;
+        mCurrentSegment = 0;
+        return false;
+    }
+
+    return true;
+}
 
 bool MotionController::MoveTo(MotionData posTarget) {
     if(posTarget.x < 0.0f || posTarget.y < 0.0f || posTarget.z < 0.0f || posTarget.x > mPosMax.x || posTarget.y > mPosMax.y || posTarget.z > mPosMax.z)
@@ -36,20 +60,28 @@ bool MotionController::MoveTo(MotionData posTarget) {
     float velMaxSeg = std::min({mVelMax.x / std::fabs(mCos.x), mVelMax.y / std::fabs(mCos.y), mVelMax.z / std::fabs(mCos.z)});
     float accMaxSeg = std::min({mAccMax.x / std::fabs(mCos.x), mAccMax.y / std::fabs(mCos.y), mAccMax.z / std::fabs(mCos.z)});
 
-    // Velocidad de entrada al segmento: proyección de la velocidad actual sobre la nueva dirección.
-    float currentSpeed = 0.0f;
-    currentSpeed += mVelocity.x * mCos.x;
-    currentSpeed += mVelocity.y * mCos.y;
-    currentSpeed += mVelocity.z * mCos.z;
+    auto axisMinSpeed = [](float minSpeed, float cos) {
+        float minCosThreshold = 0.001f; // ajustable
+        float cosAbs = std::fabs(cos) < minCosThreshold ? minCosThreshold : std::fabs(cos);
+        return minSpeed / cosAbs;
+    };
 
-    if (currentSpeed < 0.0f)
-        currentSpeed = 0.0f;
+    float maxFinalSpeedSeg = std::min({
+        axisMinSpeed(mVelMin.x, mCos.x),
+        axisMinSpeed(mVelMin.y, mCos.y),
+        axisMinSpeed(mVelMin.z, mCos.z)
+    });
+
+    float currentSpeedSeg = maxFinalSpeedSeg; // velocidad inicial del segmento: la velocidad final del segmento anterior
 
     mSegmentStart = mPosition;
 
+    if(mCurrentSegment >= mNumSegments)
+        maxFinalSpeedSeg = 0.0f; // último segmento: desacelerar hasta detenerse
+
     return mTrajectoryGenerator->SetTrajectoryProfile(
-        MotionState{0.0f, currentSpeed},
-        MotionState{dist, 0.0f},
+        MotionState{0.0f, currentSpeedSeg},
+        MotionState{dist, maxFinalSpeedSeg},
         TrajectoryConfig{velMaxSeg, accMaxSeg}
     );
 }
@@ -87,6 +119,5 @@ MotionData MotionController::GetVelocity() {
 std::shared_ptr<IMotionController> MakeIMotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig) {
     return std::make_shared<MotionController>(stepEngine, motionConfig);
 }
-
 
 

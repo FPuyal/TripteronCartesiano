@@ -30,9 +30,10 @@ int main(){
     auto motionController = MakeIMotionController(
         stepEngine,
         MotionConfig{
-            .pos = {200.0f, 200.0f, 200.0f},
-            .vel = {120.0f, 120.0f, 24.0f},
-            .acc = {60.0f, 60.0f, 12.0f},
+            .posMax = {200.0f, 200.0f, 200.0f},
+            .velMax = {240.0f, 240.0f, 48.0f},
+            .velMin = {30.0f, 30.0f, 30.0f},
+            .accMax = {480.0f, 480.0f, 96.0f},
             .stepsPerMm = {20.0f, 20.0f, 25.0f}
         }
     );
@@ -72,9 +73,18 @@ int main(){
         }
     }
 
-    motionController->MoveTo(MotionData{100.0f, 100.0f, 100.0f});
+    MotionData segments[] = {
+        {20.0f, 20.0f, 20.0f},
+        {150.0f, 20.0f, 20.0f},
+        {150.0f, 150.0f, 20.0f},
+        {20.0f, 150.0f, 20.0f},
+        {20.0f, 20.0f, 20.0f}
+    };
+
+    motionController->SetSegments(segments, sizeof(segments) / sizeof(segments[0]));
 
     while(1){
+        motionController->Move();
         motionController->Update();
     }
 

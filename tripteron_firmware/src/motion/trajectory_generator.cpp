@@ -70,12 +70,12 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRAPEZOIDAL);
 
-    if (fits(mInit.vel, mFinal.vel))
-        return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
-
     float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
     if(fitsCombined(mInit.vel, max_vel_aux, mFinal.vel))
         return assignProfile(TrayectoryProfileType::TRIANGULAR);
+
+    if (fits(mInit.vel, mFinal.vel))
+        return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
 
     return false;
 }
@@ -201,7 +201,7 @@ bool TrajectoryGenerator::Update() {
             return true;
         }
     }
-    return false;
+    return true;
 }
 
 void TrajectoryGenerator::Reset() {

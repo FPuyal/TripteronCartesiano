@@ -7,6 +7,7 @@ public:
     TrajectoryGenerator() = default;
     bool SetTrajectoryProfile(MotionState init, MotionState final, TrajectoryConfig config) override;
     bool Update() override;
+    bool IsFinished() override { return mFinished; }    
     void Reset() override;
 
     float GetPosition() const override { return mPos; }

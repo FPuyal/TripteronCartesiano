@@ -7,9 +7,10 @@ struct MotionData {
 };
 
 struct MotionConfig {
-    MotionData pos;
-    MotionData vel;
-    MotionData acc;
+    MotionData posMax;
+    MotionData velMax;
+    MotionData velMin;
+    MotionData accMax;
     MotionData stepsPerMm;
 };
 
