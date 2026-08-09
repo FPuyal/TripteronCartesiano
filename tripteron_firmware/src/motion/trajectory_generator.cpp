@@ -1,10 +1,12 @@
 #include "trajectory_generator.h"
 #include "trajectory_generator_utils.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <memory>
 #include <limits>
+#include <utility>
 #include <vector>
 
 #define UPDATE_DT 0.001 // Se define en base a la frecuancia de interrupción del TIM2
@@ -25,138 +27,59 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     mFinal = final;
 
     mCurrentPhase = 0;
-    mFinished = false;
-
     mPhaseTime = 0.0;
     mPos0 = mInit.pos;
     mVel0 = mInit.vel;
-
     mPos = mInit.pos;
     mVel = mInit.vel;
     mAcc = 0.0;
 
-    mPhases.clear();
-
-    const float dist = mFinal.pos - mInit.pos;
-
-    auto assignProfile = [this](TrayectoryProfileType profileType) -> bool {
-        mProfile = profileType;
-        if (mProfile == TrayectoryProfileType::NONE)
-            return false;
-
-        return GeneratePhases();
-    };
-
-    auto fits = [this, dist](float initVel, float finalVel) -> bool {
-        const float d = CalculateRampDistance(initVel, finalVel, mConfig);
-        return d > eps && d <= dist + eps;
-    };
-
-    auto fitsCombined = [this, dist](float initVel, float maxVel, float finalVel) -> bool {
-        const float d1 = CalculateRampDistance(initVel, maxVel, mConfig);
-        const float d2 = CalculateRampDistance(maxVel, finalVel, mConfig);
-        return d1 > eps && d2 > eps && (d1 + d2) <= dist + eps;
-    };
-
-    if (mFinal.vel >= mConfig.velMax - eps) {
-        mFinal.vel = mConfig.velMax;
-
-        if (fits(mInit.vel, mConfig.velMax))
-            return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
-
+    if(!GeneratePhases()) {
+        mFinished = true;   // nada ejecutable: no dejamos el generador en estado zombi
         return false;
     }
 
-    if (fitsCombined(mInit.vel, mConfig.velMax, mFinal.vel))
-        return assignProfile(TrayectoryProfileType::TRAPEZOIDAL);
-
-    float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
-    if(fitsCombined(mInit.vel, max_vel_aux, mFinal.vel))
-        return assignProfile(TrayectoryProfileType::TRIANGULAR);
-
-    if (fits(mInit.vel, mFinal.vel))
-        return assignProfile(TrayectoryProfileType::TRAPEZOIDAL_PARCIAL);
-
-    return false;
+    mFinished = false;
+    return true;
 }
 
 bool TrajectoryGenerator::GeneratePhases() {
     mPhases.clear();
 
-    auto addRampProfile = [this](float initVel, float finalVel) -> bool {
-        if (initVel < 0.0 || finalVel < 0.0)
-            return false;
+    const float a    = mConfig.accMax;
+    const float vmax = mConfig.velMax;
+    const float vi   = mInit.vel;              // velocidad de entrada
+    const float vf   = mFinal.vel;             // velocidad de salida
+    const float d    = mFinal.pos - mInit.pos; // distancia del segmento
 
-        float accleSign = (finalVel >= initVel) ? 1.0 : -1.0;
+    if (a <= 0.0f || d <= eps)
+        return false;
 
-        mPhases.push_back(TrayectoryPhase {
-            accleSign * mConfig.accMax,
-            finalVel,
-            0.0,
-            EndCondition::VEL,
-        });
+    // Pico de un triangular que llena exactamente d.
+    const float vp = sqrtf(a * d + 0.5f * (vi * vi + vf * vf));
 
-        return true;
-    };
+    // Si el pico no alcanza el mayor de los dos extremos, d es demasiado corta
+    // ni para la transición vi->vf respetando la aceleración (lo evita el look-ahead).
+    if (vp < std::max(vi, vf) - eps)
+        return false;
 
-    auto addCruisePhase = [this](float cruiseVel, TrayectoryProfileType profileType) -> bool {
-        if (cruiseVel <= eps || profileType == TrayectoryProfileType::TRIANGULAR)
-            return false;
+    // Crucero: triangular (vp) si no llega a vmax; trapezoidal (vmax) si lo supera.
+    const float vc = (vp < vmax) ? vp : vmax;
 
-        float pos_aux = mFinal.pos;
-        float dist_aux = (mFinal.pos - mInit.pos);
+    const float dAcc    = (vc * vc - vi * vi) / (2.0f * a); // >= 0 (vc >= vi)
+    const float dDec    = (vc * vc - vf * vf) / (2.0f * a); // >= 0 (vc >= vf)
+    const float dCruise = d - dAcc - dDec;
 
-        if(profileType == TrayectoryProfileType::TRAPEZOIDAL) {
-            float decelDist = CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
-            dist_aux -= CalculateRampDistance(mInit.vel, cruiseVel, mConfig);
-            dist_aux -= decelDist;
-            pos_aux  -= decelDist;
-        }
-        if(profileType == TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) {
-            dist_aux -= mInit.vel <= mFinal.vel ?
-                CalculateRampDistance(mInit.vel, cruiseVel, mConfig) :
-                CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
-            pos_aux -= mInit.vel <= mFinal.vel ?
-                0.0f:
-                CalculateRampDistance(cruiseVel, mFinal.vel, mConfig);
-        }
+    if (vc > vi + eps)                                                  // aceleración vi -> vc
+        mPhases.push_back({ +a,   vc, 0.0f, EndCondition::VEL });
 
-        if (dist_aux < -eps)
-            return false;  // El perfil no cabe
-        if (dist_aux <  eps)
-            return true;   // Cabe pero sin fase de crucero
+    if (dCruise > eps)                                                  // crucero a vc
+        mPhases.push_back({ 0.0f, vc, dAcc + dCruise, EndCondition::DIST });
 
-        // Necesita fase de crucero
-        mPhases.push_back({
-            0.0,
-            cruiseVel,
-            pos_aux,
-            EndCondition::DIST
-        });
+    if (vc > vf + eps)
+        mPhases.push_back({-a, vf, 0.0f, EndCondition::VEL}); // desaceleración vc -> vf
 
-        return true;
-    };
-
-    switch (mProfile) {
-        case TrayectoryProfileType::TRAPEZOIDAL:
-            return (addRampProfile(mInit.vel, mConfig.velMax)
-            && addCruisePhase(mConfig.velMax, TrayectoryProfileType::TRAPEZOIDAL)
-            && addRampProfile(mConfig.velMax, mFinal.vel));
-        case TrayectoryProfileType::TRAPEZOIDAL_PARCIAL:
-            if(mFinal.vel < mInit.vel - eps)
-                return (addCruisePhase(mInit.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL) &&
-                    addRampProfile(mInit.vel, mFinal.vel));
-            return (addRampProfile(mInit.vel, mFinal.vel) &&
-                addCruisePhase(mFinal.vel, TrayectoryProfileType::TRAPEZOIDAL_PARCIAL));
-        case TrayectoryProfileType::TRIANGULAR : {
-            float dist = mFinal.pos - mInit.pos;
-            float max_vel_aux = sqrtf(mConfig.accMax * dist + (mInit.vel * mInit.vel + mFinal.vel * mFinal.vel) / 2);
-            return (addRampProfile(mInit.vel, max_vel_aux) &&
-                addRampProfile(max_vel_aux, mFinal.vel));
-        }
-        default:
-            return false;
-    }
+    return !mPhases.empty();
 }
 
 bool TrajectoryGenerator::Update() {
@@ -206,7 +129,7 @@ bool TrajectoryGenerator::Update() {
 
 void TrajectoryGenerator::Reset() {
     mCurrentPhase = 0;
-    mFinished = false;
+    mFinished = true;
 
     mPhaseTime = 0.0;
     mPos0 = 0.0;
