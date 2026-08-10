@@ -20,14 +20,64 @@ void MotionController::SetSegments(MotionData* segments, std::size_t numSegments
 
     mCurrentSegment = 0;
 
+    if(mNumSegments == 0)
+        return;
+
+    // Geometría + límites de velocidad/aceleración propios de cada segmento (una sola vez).
     MotionData ref = mPosition;
-    for(int i = 0; i < mNumSegments; i++) {
-        MotionData d = {mSegments[i].posTarget.x - ref.x, mSegments[i].posTarget.y - ref.y, mSegments[i].posTarget.z - ref.z};
-        float dist = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
-        mSegments[i].dist = dist;
-        mSegments[i].cos  = (dist > 1e-6f) ? MotionData{d.x/dist, d.y/dist, d.z/dist}
-                                : MotionData{0.0f, 0.0f, 0.0f};
-        ref = mSegments[i].posTarget;
+    for(std::size_t i = 0; i < mNumSegments; i++) {
+        SegmentData& segment = mSegments[i];
+
+        MotionData d = {segment.posTarget.x - ref.x, segment.posTarget.y - ref.y, segment.posTarget.z - ref.z};
+        segment.dist = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+        segment.cos  = (segment.dist > 1e-6f) ? MotionData{d.x/segment.dist, d.y/segment.dist, d.z/segment.dist}
+                                      : MotionData{0.0f, 0.0f, 0.0f};
+
+        segment.velMaxSeg = std::min({
+            mMotionConfig.velMax.x / std::fabs(segment.cos.x),
+            mMotionConfig.velMax.y / std::fabs(segment.cos.y),
+            mMotionConfig.velMax.z / std::fabs(segment.cos.z)
+        });
+        segment.accMaxSeg = std::min({
+            mMotionConfig.accMax.x / std::fabs(segment.cos.x),
+            mMotionConfig.accMax.y / std::fabs(segment.cos.y),
+            mMotionConfig.accMax.z / std::fabs(segment.cos.z)
+        });
+
+        ref = segment.posTarget;
+    }
+
+    // Look-ahead, pasada hacia atrás: velocidad de cruce (junction) capada por lo que
+    // el segmento siguiente necesita para poder frenar a tiempo hasta la suya.
+    mSegments[mNumSegments-1].finalVel = 0.0f; // el último segmento de la cola siempre frena del todo
+
+    for(int i = static_cast<int>(mNumSegments) - 2; i >= 0; i--) {
+        SegmentData& segment = mSegments[i];
+        const SegmentData& nextSegment = mSegments[i+1];
+
+        float cosTheta = -(segment.cos.x * nextSegment.cos.x + segment.cos.y * nextSegment.cos.y + segment.cos.z * nextSegment.cos.z);
+        cosTheta = std::min(1.0f, std::max(-1.0f, cosTheta));
+        const float sinMidTheta = std::sqrt(0.5f * (1.0f - cosTheta));
+
+        float junctionVel = segment.velMaxSeg; // recto: no hay restricción de esquina
+        if(sinMidTheta < 1.0f - 1e-6f) {
+            const float R = mMotionConfig.junctionDeviation * sinMidTheta / (1.0f - sinMidTheta);
+            junctionVel = std::sqrt(segment.accMaxSeg * R);
+        }
+
+        const float velDecelLimit = std::sqrt(nextSegment.finalVel * nextSegment.finalVel + 2.0f * nextSegment.accMaxSeg * nextSegment.dist);
+
+        segment.finalVel = std::min({junctionVel, segment.velMaxSeg, velDecelLimit});
+    }
+
+    // Look-ahead, pasada hacia adelante: capa por lo que de verdad se puede acelerar
+    // desde la velocidad de entrada real en la distancia de cada segmento.
+    float initVel = std::sqrt(mVelocity.x*mVelocity.x + mVelocity.y*mVelocity.y + mVelocity.z*mVelocity.z);
+    for(std::size_t i = 0; i < mNumSegments; i++) {
+        SegmentData& segment = mSegments[i];
+        const float velAccelLimit = std::sqrt(initVel*initVel + 2.0f * segment.accMaxSeg * segment.dist);
+        segment.finalVel = std::min(segment.finalVel, velAccelLimit);
+        initVel = segment.finalVel;
     }
 }
 
@@ -35,54 +85,24 @@ bool MotionController::Move() {
     if(!mSegments || mCurrentSegment >= mNumSegments)
         return false;
 
-    if(mTrajectoryGenerator->IsFinished()) {
-        if(mSegments[mCurrentSegment].posTarget.x < 0.0f || mSegments[mCurrentSegment].posTarget.x > mMotionConfig.posMax.x ||
-            mSegments[mCurrentSegment].posTarget.y < 0.0f || mSegments[mCurrentSegment].posTarget.y > mMotionConfig.posMax.y ||
-            mSegments[mCurrentSegment].posTarget.z < 0.0f || mSegments[mCurrentSegment].posTarget.z > mMotionConfig.posMax.z)
-            return false;
+    if(!mTrajectoryGenerator->IsFinished())
+        return true; // segmento en curso, nada que lanzar todavía
 
-        float velMaxSeg = std::min({
-            mMotionConfig.velMax.x / std::fabs(mSegments[mCurrentSegment].cos.x),
-            mMotionConfig.velMax.y / std::fabs(mSegments[mCurrentSegment].cos.y),
-            mMotionConfig.velMax.z / std::fabs(mSegments[mCurrentSegment].cos.z)
-        });
+    const SegmentData& segment = mSegments[mCurrentSegment];
 
-        float accMaxSeg = std::min({
-            mMotionConfig.accMax.x / std::fabs(mSegments[mCurrentSegment].cos.x),
-            mMotionConfig.accMax.y / std::fabs(mSegments[mCurrentSegment].cos.y),
-            mMotionConfig.accMax.z / std::fabs(mSegments[mCurrentSegment].cos.z)
-        });
+    if(segment.posTarget.x < 0.0f || segment.posTarget.x > mMotionConfig.posMax.x ||
+        segment.posTarget.y < 0.0f || segment.posTarget.y > mMotionConfig.posMax.y ||
+        segment.posTarget.z < 0.0f || segment.posTarget.z > mMotionConfig.posMax.z)
+        return false;
 
-        float initVel = sqrt(mVelocity.x * mVelocity.x + mVelocity.y * mVelocity.y + mVelocity.z * mVelocity.z);
-        float finalVel = 0.0f;
+    const float initVel = std::sqrt(mVelocity.x*mVelocity.x + mVelocity.y*mVelocity.y + mVelocity.z*mVelocity.z);
 
-        if(mCurrentSegment < (mNumSegments-1)) {
-            float cosTheta = -(mSegments[mCurrentSegment].cos.x * mSegments[mCurrentSegment+1].cos.x +
-                    mSegments[mCurrentSegment].cos.y * mSegments[mCurrentSegment+1].cos.y +
-                    mSegments[mCurrentSegment].cos.z * mSegments[mCurrentSegment+1].cos.z);
+    mCurrentSegment++;
 
-            if(cosTheta > 1.0f) cosTheta = 1.0f;
-            if(cosTheta < -1.0f) cosTheta = -1.0f;
-
-            float sinMidTheta = std::sqrt(0.5f * (1.0f - cosTheta));
-            if(sinMidTheta < 1.0f - 1e-6f) {
-                float R = mMotionConfig.junctionDeviation * sinMidTheta / (1.0f - sinMidTheta);
-                finalVel = std::sqrt(accMaxSeg * R);
-            } else {
-                finalVel = velMaxSeg;   // recto
-            }
-            finalVel = std::min(finalVel, velMaxSeg);   // (idealmente también con la velMax del siguiente segmento)
-        }
-
-        mCurrentSegment++;
-
-        return mTrajectoryGenerator->SetTrajectoryProfile(
-            MotionState{0.0f, initVel},
-            MotionState{mSegments[mCurrentSegment-1].dist, finalVel},
-            TrajectoryConfig{velMaxSeg, accMaxSeg});
-    }
-
-    return true;
+    return mTrajectoryGenerator->SetTrajectoryProfile(
+        MotionState{0.0f, initVel},
+        MotionState{segment.dist, segment.finalVel},
+        TrajectoryConfig{segment.velMaxSeg, segment.accMaxSeg});
 }
 
 bool MotionController::Update() {

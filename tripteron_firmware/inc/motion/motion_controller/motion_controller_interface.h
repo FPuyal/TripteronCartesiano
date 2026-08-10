@@ -9,6 +9,7 @@
 class IMotionController {
 public:
     virtual ~IMotionController() = default;
+    virtual void SetHomePosition() = 0; // referencia real tras homing: pos y vel de partida para SetSegments()
     virtual void SetSegments(MotionData* segments, std::size_t numSegments) = 0;
     virtual bool Move() = 0;
     virtual void RequestUpdate() = 0;
