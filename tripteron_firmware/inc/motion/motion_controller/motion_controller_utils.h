@@ -9,8 +9,14 @@ struct MotionData {
 struct MotionConfig {
     MotionData posMax;
     MotionData velMax;
-    MotionData velMin;
     MotionData accMax;
+    float junctionDeviation;
     MotionData stepsPerMm;
+};
+
+struct SegmentData {
+    MotionData posTarget;
+    MotionData cos;
+    float dist;
 };
 

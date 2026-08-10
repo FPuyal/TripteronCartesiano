@@ -30,11 +30,11 @@ int main(){
     auto motionController = MakeIMotionController(
         stepEngine,
         MotionConfig{
-            .posMax = {200.0f, 200.0f, 200.0f},
-            .velMax = {240.0f, 240.0f, 48.0f},
-            .velMin = {30.0f, 30.0f, 30.0f},
-            .accMax = {480.0f, 480.0f, 96.0f},
-            .stepsPerMm = {20.0f, 20.0f, 25.0f}
+            {200.0f, 200.0f, 200.0f},
+            {480.0f, 480.0f, 96.0f},
+            {960.0f, 960.0f, 192.0f},
+            0.1f,
+            {20.0f, 20.0f, 25.0f}
         }
     );
     motionControllerInstance = motionController.get();
