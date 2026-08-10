@@ -1,17 +1,5 @@
 #include "step_engine.h"
 
-void StepEngine::SetXSteps(int16_t steps) {
-    mSteps[0] = steps;
-}
-
-void StepEngine::SetYSteps(int16_t steps) {
-    mSteps[1] = steps;
-}
-
-void StepEngine::SetZSteps(int16_t steps) {
-    mSteps[2] = steps;
-}
-
 void StepEngine::Update() {
     // Generar tantos tick como sean necesario para su consumo.
     if(mBufferFlag) {
@@ -59,6 +47,6 @@ void StepEngine::Tick() {
         mBufferFlag = true;
 }
 
-std::unique_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
-    return std::make_unique<StepEngine>(threshold, xTmc, yTmc, zTmc);
+std::shared_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
+    return std::make_shared<StepEngine>(threshold, xTmc, yTmc, zTmc);
 }

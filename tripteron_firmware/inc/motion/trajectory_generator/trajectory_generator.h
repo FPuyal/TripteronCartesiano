@@ -4,17 +4,14 @@
 
 class TrajectoryGenerator : public ITrajectoryGenerator {
 public:
-    explicit TrajectoryGenerator(TrajectoryConfig config) : mConfig(config) {}
-    bool SetTrajectoryProfile(MotionState init, MotionState final);
-    void RequestUpdate() override { mUpdateTrajectory = true; }
+    TrajectoryGenerator() = default;
+    bool SetTrajectoryProfile(MotionState init, MotionState final, TrajectoryConfig config) override;
     bool Update() override;
+    bool IsFinished() override { return mFinished; }    
     void Reset() override;
 
-    float GetDirection() const override { return mDir; }
     float GetPosition() const override { return mPos; }
     float GetVelocity() const override { return mVel; }
-
-    bool IsFinished() const override { return mFinished; }
 
 private:
     bool GeneratePhases();
@@ -33,12 +30,9 @@ private:
     float mVel0 = 0.0;
 
     // Actual state variables
-    volatile float mDir = 0.0;
     volatile float mPos = 0.0;
     volatile float mVel = 0.0;
     float mAcc = 0.0;
 
     volatile bool mFinished = true;
-
-    volatile bool mUpdateTrajectory = false;
 };

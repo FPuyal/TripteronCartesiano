@@ -9,8 +9,8 @@
             "cwd": "${workspaceFolder}",
             "preBuild": "${command:st-stm32-ide-debug-launch.build}",
             "runEntry": "main",
-            "serverPort": 51000,
-            "swvPort": 51001,
+            "serverPort": 5010,
+            "swvPort": 5011,
             "serverParameters": [
                 "--connect-under-reset",
                 "--hard-reset"
@@ -19,7 +19,11 @@
                 {
                     "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
                 }
-            ]
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
         }
     ]
 }
