@@ -1,17 +1,5 @@
 #include "step_engine.h"
 
-void StepEngine::SetXSteps(int16_t steps) {
-    mSteps[0] = steps;
-}
-
-void StepEngine::SetYSteps(int16_t steps) {
-    mSteps[1] = steps;
-}
-
-void StepEngine::SetZSteps(int16_t steps) {
-    mSteps[2] = steps;
-}
-
 void StepEngine::Update() {
     // Generar tantos tick como sean necesario para su consumo.
     if(mBufferFlag) {

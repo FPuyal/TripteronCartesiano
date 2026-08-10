@@ -14,8 +14,10 @@ public:
     virtual bool Move() = 0;
     virtual void RequestUpdate() = 0;
     virtual bool Update() = 0;
+
     virtual MotionData GetPosition() = 0;
     virtual MotionData GetVelocity() = 0;
+    virtual MotionData GetSteps() = 0;
 };
 
-std::shared_ptr<IMotionController> MakeIMotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig);
+std::shared_ptr<IMotionController> MakeIMotionController(MotionConfig motionConfig);

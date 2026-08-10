@@ -9,9 +9,7 @@ public:
         mThreshold(threshold), mXTmc(xTmc), mYTmc(yTmc), mZTmc(zTmc) {}
     ~StepEngine() override = default;
 
-    void SetXSteps(int16_t steps) override;
-    void SetYSteps(int16_t steps) override;
-    void SetZSteps(int16_t steps) override;
+    void SetSteps(int16_t x, int16_t y, int16_t z) override { mSteps[0] = x; mSteps[1] = y; mSteps[2] = z; };
     void RequestUpdate() override { mBufferFlag = true; }
     void Update() override;
     void Tick() override;

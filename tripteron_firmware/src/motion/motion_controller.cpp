@@ -5,8 +5,8 @@
 #include <cmath>
 #include <limits>
 
-MotionController::MotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig)
-        : mStepEngine(stepEngine), mMotionConfig(motionConfig) {
+MotionController::MotionController(MotionConfig motionConfig)
+        : mMotionConfig(motionConfig) {
     mTrajectoryGenerator = MakeITrajectoryGenerator();
 };
 
@@ -51,7 +51,7 @@ void MotionController::SetSegments(MotionData* segments, std::size_t numSegments
     // el segmento siguiente necesita para poder frenar a tiempo hasta la suya.
     mSegments[mNumSegments-1].finalVel = 0.0f; // el último segmento de la cola siempre frena del todo
 
-    for(int i = static_cast<int>(mNumSegments) - 2; i >= 0; i--) {
+    for(int i = mNumSegments - 2; i >= 0; i--) {
         SegmentData& segment = mSegments[i];
         const SegmentData& nextSegment = mSegments[i+1];
 
@@ -131,23 +131,11 @@ bool MotionController::Update() {
         pathVel * mSegments[idx].cos.y,
         pathVel * mSegments[idx].cos.z};
 
-    mStepEngine->SetXSteps(static_cast<int16_t>(mVelocity.x * mMotionConfig.stepsPerMm.x));
-    mStepEngine->SetYSteps(static_cast<int16_t>(mVelocity.y * mMotionConfig.stepsPerMm.y));
-    mStepEngine->SetZSteps(static_cast<int16_t>(mVelocity.z * mMotionConfig.stepsPerMm.z));
-
     return true;
 }
 
-MotionData MotionController::GetPosition() {
-    return mPosition;
-}
-
-MotionData MotionController::GetVelocity() {
-    return mVelocity;
-}
-
-std::shared_ptr<IMotionController> MakeIMotionController(std::shared_ptr<IStepEngine> stepEngine, MotionConfig motionConfig) {
-    return std::make_shared<MotionController>(stepEngine, motionConfig);
+std::shared_ptr<IMotionController> MakeIMotionController(MotionConfig motionConfig) {
+    return std::make_shared<MotionController>(motionConfig);
 }
 
 

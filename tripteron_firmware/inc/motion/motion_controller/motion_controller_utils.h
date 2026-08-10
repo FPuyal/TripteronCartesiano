@@ -6,6 +6,14 @@ struct MotionData {
     float z;
 };
 
+inline MotionData operator*(const MotionData& a, const MotionData& b) {
+    MotionData result = a;
+    result.x *= b.x;
+    result.y *= b.y;
+    result.z *= b.z;
+    return result;
+}
+
 struct MotionConfig {
     MotionData posMax;
     MotionData velMax;

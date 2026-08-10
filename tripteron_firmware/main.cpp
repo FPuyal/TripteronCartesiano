@@ -28,7 +28,6 @@ int main(){
     stepEngineInstance = stepEngine.get();
 
     auto motionController = MakeIMotionController(
-        stepEngine,
         MotionConfig{
             {200.0f, 200.0f, 200.0f},
             {240.0f, 240.0f, 48.0f},
@@ -48,27 +47,27 @@ int main(){
 
     while(!homingFlagX) {
         if(!hardwareManager->GetEndStop(EndStopId::XEnd)->Read()) {
-            stepEngine->SetXSteps(-500);
+            stepEngine->SetSteps(-500, 0, 0);
         } else {
-            stepEngine->SetXSteps(0);
+            stepEngine->SetSteps(0, 0, 0);
             homingFlagX = true;
         }
     }
 
     while(!homingFlagY) {
         if(!hardwareManager->GetEndStop(EndStopId::YEnd)->Read()) {
-            stepEngine->SetYSteps(-500);
+            stepEngine->SetSteps(0, -500, 0);
         } else {
-            stepEngine->SetYSteps(0);
+            stepEngine->SetSteps(0, 0, 0);
             homingFlagY = true;
         }
     }
 
     while(!homingFlagZ) {
         if(!hardwareManager->GetEndStop(EndStopId::ZEnd)->Read()) {
-            stepEngine->SetZSteps(-500);
+            stepEngine->SetSteps(0, 0, -500);
         } else {
-            stepEngine->SetZSteps(0);
+            stepEngine->SetSteps(0, 0, 0);
             homingFlagZ = true;
         }
     }
@@ -191,6 +190,7 @@ int main(){
     while(1){
         motionController->Move();
         motionController->Update();
+        stepEngine->SetSteps(motionController->GetSteps().x, motionController->GetSteps().y, motionController->GetSteps().z);
     }
 
 }
