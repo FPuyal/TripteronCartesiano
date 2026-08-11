@@ -4,11 +4,18 @@
 #include "kinematics_interface.h"
 #include "motion_controller_interface.h"
 #include "usb_cdc_interface.h"
+#include "robot_interface.h"
 
 IStepEngine* stepEngineInstance = nullptr;
 IKinematics* kinematicsInstance = nullptr;
 IMotionController* motionControllerInstance = nullptr;
 IUsbCdc* usbCdcInstance = nullptr;
+IRobot* robotInterface = nullptr;
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin & 0xE000)
+        if(robotInterface) robotInterface->EmergencyStop();
+}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM1) {

@@ -20,11 +20,13 @@ public:
     MotionData GetPosition() override { return mPosition; }
     MotionData GetVelocity() override { return mVelocity; }
     MotionData GetSteps() override { return mVelocity * mMotionConfig.stepsPerMm; }
+    bool IsFinished() override { return mFinished; }
 
 private:
     SegmentData* mSegments = nullptr;
     uint8_t mNumSegments = 0;
     uint8_t mCurrentSegment = 0;
+    bool mFinished = true;
 
     // Estado del robot (mm, mm/s)
     MotionData mPosition = {};

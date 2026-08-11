@@ -18,6 +18,7 @@ public:
     virtual MotionData GetPosition() = 0;
     virtual MotionData GetVelocity() = 0;
     virtual MotionData GetSteps() = 0;
+    virtual bool IsFinished() = 0;
 };
 
 std::shared_ptr<IMotionController> MakeIMotionController(MotionConfig motionConfig);

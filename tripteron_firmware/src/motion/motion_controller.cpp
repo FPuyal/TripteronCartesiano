@@ -15,6 +15,8 @@ void MotionController::SetSegments(MotionData* segments, std::size_t numSegments
     mSegments = new SegmentData[numSegments]{};
     mNumSegments = numSegments;
 
+    mFinished = false;
+
     for(int i = 0; i < mNumSegments; i++)
         mSegments[i].posTarget = segments[i];
 
@@ -82,8 +84,10 @@ void MotionController::SetSegments(MotionData* segments, std::size_t numSegments
 }
 
 bool MotionController::Move() {
-    if(!mSegments || mCurrentSegment >= mNumSegments)
+    if(!mSegments || mCurrentSegment >= mNumSegments) {
+        mFinished = true;
         return false;
+    }
 
     if(!mTrajectoryGenerator->IsFinished())
         return true; // segmento en curso, nada que lanzar todavía

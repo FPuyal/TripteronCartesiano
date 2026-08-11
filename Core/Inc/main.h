@@ -65,10 +65,13 @@ void Error_Handler(void);
 #define STEP_X_GPIO_Port GPIOE
 #define END_STOP_X_Pin GPIO_PIN_13
 #define END_STOP_X_GPIO_Port GPIOC
+#define END_STOP_X_EXTI_IRQn EXTI15_10_IRQn
 #define END_STOP_Y_Pin GPIO_PIN_14
 #define END_STOP_Y_GPIO_Port GPIOC
+#define END_STOP_Y_EXTI_IRQn EXTI15_10_IRQn
 #define END_STOP_Z_Pin GPIO_PIN_15
 #define END_STOP_Z_GPIO_Port GPIOC
+#define END_STOP_Z_EXTI_IRQn EXTI15_10_IRQn
 #define EN_Z_Pin GPIO_PIN_4
 #define EN_Z_GPIO_Port GPIOD
 #define DIR_Z_Pin GPIO_PIN_5
