@@ -1,5 +1,7 @@
 #pragma once
 
+#include "motion_controller_utils.h"
+
 enum class State {
     Init,
     Homing,
@@ -10,12 +12,13 @@ enum class State {
 };
 
 enum class StateRequest {
+    None,
     Home,
     Move,
-    RESET
+    Reset
 };
 
 struct CommandRequest {
     StateRequest state;
-    uint16_t command;
+    MotionPath path;
 };

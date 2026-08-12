@@ -117,7 +117,7 @@ void Robot::Tick(){
             break;
 
         case State::Fault:
-            if(mCommandRequest.state == StateRequest::RESET)
+            if(mCommandRequest.state == StateRequest::Reset)
                 mState = State::Init;
             break;
     }
@@ -126,6 +126,75 @@ void Robot::Tick(){
 void Robot::EmergencyStop() {
     mStepEngine->SetSteps(0, 0, 0);
     mState = State::Fault;
+}
+
+CommandRequest Robot::ParseCommand(char* command, uint16_t size) {
+    CommandRequest commandRequest;
+    commandRequest.state = StateRequest::None;
+    commandRequest.path = {nullptr, 0};
+
+    char* character = command;
+
+    switch (*character) {
+        case 'H':
+            commandRequest.state = StateRequest::Home;
+            break;
+        case 'R':
+            commandRequest.state = StateRequest::Reset;
+            break;
+        case 'M':
+            commandRequest.state = StateRequest::Move;
+            break;
+        default:
+            break;
+    }
+
+    if(commandRequest.state == StateRequest::Move) {
+        character++;
+
+        uint16_t segmentCount = 0;
+
+        while(*character != '\0' && segmentCount < MAX_SEGMENTS) {
+            if(*character == ' ') {
+                character++;
+                continue;
+            }
+
+            float values[3] {};
+            bool valid = true;
+
+            for(auto& value : values) {
+                if(*character == '\0')
+                    break;
+
+                while(*character == ' ')
+                    character++;
+
+                if(*character < '0' || *character > '9') {
+                    valid = false;
+                    break;
+                }
+
+                while(*character >= '0' && *character <= '9') {
+                    value = value * 10.0f + (*character - '0');
+                    character++;
+                }
+            }
+
+            if(!valid)
+                break;
+
+            mParsedSegments[segmentCount].x = values[0];
+            mParsedSegments[segmentCount].y = values[1];
+            mParsedSegments[segmentCount].z = values[2];
+            segmentCount++;
+
+        }
+
+        commandRequest.path = {mParsedSegments, segmentCount};
+    }
+
+    return commandRequest;
 }
 
 std::shared_ptr<IRobot> MakeIRobot(std::shared_ptr<IStepEngine> stepEngine,

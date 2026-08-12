@@ -1,5 +1,4 @@
 #include "motion_controller.h"
-#include "motion_controller_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,15 +9,15 @@ MotionController::MotionController(MotionConfig motionConfig)
     mTrajectoryGenerator = MakeITrajectoryGenerator();
 };
 
-void MotionController::SetSegments(MotionData* segments, std::size_t numSegments) {
+void MotionController::SetSegments(MotionPath path) {
     delete[] mSegments;
-    mSegments = new SegmentData[numSegments]{};
-    mNumSegments = numSegments;
+    mSegments = new SegmentData[path.size]{};
+    mNumSegments = path.size;
 
     mFinished = false;
 
     for(int i = 0; i < mNumSegments; i++)
-        mSegments[i].posTarget = segments[i];
+        mSegments[i].posTarget = path.segments[i];
 
     mCurrentSegment = 0;
 

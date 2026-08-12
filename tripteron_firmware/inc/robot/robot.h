@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#define MAX_SEGMENTS 20
+
 class Robot : public IRobot {
 public:
     Robot(std::shared_ptr<IStepEngine> stepEngine,
@@ -27,8 +29,11 @@ public:
     void EmergencyStop() override;
 
 private:
+    CommandRequest ParseCommand(char* command, uint16_t size);
+
     volatile State mState;
     volatile CommandRequest mCommandRequest;
+    MotionData mParsedSegments[MAX_SEGMENTS] {};
 
     uint32_t mHomingTicks = 0;
     uint32_t mBackoffTicks = 0;

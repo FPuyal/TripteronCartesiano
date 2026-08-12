@@ -31,3 +31,8 @@ struct SegmentData {
     float finalVel;   // velocidad de salida ya acotada (junction + backward + forward)
 };
 
+struct MotionPath {
+    MotionData* segments;
+    uint16_t size;
+};
+
