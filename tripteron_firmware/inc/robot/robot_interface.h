@@ -11,7 +11,7 @@ class IRobot {
 public:
     virtual void Run() = 0;
     virtual void Tick() = 0;
-    virtual void SetCommandRequest(const CommandRequest& request) = 0;
+    virtual void SetCommandRequest(CommandRequest commandRequest) = 0;
     virtual void EmergencyStop() = 0;
 };
 

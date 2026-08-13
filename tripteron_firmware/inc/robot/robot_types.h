@@ -2,6 +2,8 @@
 
 #include "motion_controller_utils.h"
 
+#define MAX_SEGMENTS 20
+
 enum class State {
     Init,
     Homing,
@@ -19,6 +21,7 @@ enum class StateRequest {
 };
 
 struct CommandRequest {
-    StateRequest state;
-    MotionPath path;
+    StateRequest stateRequest;
+    MotionData path[MAX_SEGMENTS];
+    uint16_t pathSize;
 };
