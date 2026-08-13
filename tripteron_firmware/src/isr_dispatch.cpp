@@ -3,6 +3,7 @@
 #include "step_engine_interface.h"
 #include "kinematics_interface.h"
 #include "motion_controller_interface.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "usb_cdc_interface.h"
 #include "robot_interface.h"
 
@@ -13,7 +14,7 @@ IUsbCdc* usbCdcInstance = nullptr;
 IRobot* robotInterface = nullptr;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin & 0xE000)
+    if (GPIO_Pin & (GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15))
         if(robotInterface) robotInterface->EmergencyStop();
 }
 

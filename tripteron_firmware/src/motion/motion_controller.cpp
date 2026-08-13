@@ -83,13 +83,13 @@ void MotionController::SetSegments(MotionPath path) {
 }
 
 bool MotionController::Move() {
+    if(!mTrajectoryGenerator->IsFinished())
+        return true; // segmento en curso, nada que lanzar todavía
+    
     if(!mSegments || mCurrentSegment >= mNumSegments) {
         mFinished = true;
         return false;
     }
-
-    if(!mTrajectoryGenerator->IsFinished())
-        return true; // segmento en curso, nada que lanzar todavía
 
     const SegmentData& segment = mSegments[mCurrentSegment];
 

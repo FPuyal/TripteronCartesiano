@@ -11,7 +11,7 @@
 class MotionController : public IMotionController {
 public:
     MotionController(MotionConfig motionConfig);
-    void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; }
+    void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; mVelocity = {0.0f, 0.0f, 0.0f};}
     void SetSegments(MotionPath path) override;
     bool Move() override;
     void RequestUpdate() override { mUpdateMotion = true; }

@@ -5,9 +5,12 @@
 #include "stm32f4xx_hal.h"
 
 #include <memory>
+#include <cstring>
 
-#define HOMING_TIMEOUT_TICKS 5000
-#define BACKOFF_TIMEOUT_TICKS 1000
+#define HOMING_TIMEOUT_MS 10000
+#define BACKOFF_TIMEOUT_MS 10000
+
+extern IMotionController* motionControllerInstance;
 
 Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopX,
@@ -26,44 +29,60 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
             {480.0f, 480.0f, 96.0f},
             0.5f,
             {20.0f, 20.0f, 25.0f}});
+    motionControllerInstance = mMotionController.get();
 }
 
 void Robot::Tick(){
+    bool endX = mEndStopX->Read();
+    bool endY = mEndStopY->Read();
+    bool endZ = mEndStopZ->Read();
     // Lógica de cada estado
     switch (mState) {
         case State::Init:
+            HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
             if(mStateRequest == StateRequest::Home)
-                HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+                mHomingMs = HAL_GetTick();
             break;
 
         case State::Homing:
             mStepEngine->SetSteps(
-                mEndStopX->Read() ? 0 : -500,
-                mEndStopY->Read() ? 0 : -500,
-                mEndStopZ->Read() ? 0 : -500);
+                endX ? 0 : -500,
+                endY ? 0 : -500,
+                endZ ? 0 : -500);
 
-            if(mHomingTicks++ > HOMING_TIMEOUT_TICKS)
+            mElapsedMs = HAL_GetTick() - mHomingMs;
+            if(mElapsedMs > HOMING_TIMEOUT_MS)
                 mStepEngine->SetSteps(0, 0, 0);
+
+            if(endX && endY && endZ)
+                mBackoffMs = HAL_GetTick();
             break;
 
         case State::Backoff:
             mStepEngine->SetSteps(
-                mEndStopX->Read() ? 100 : 0,
-                mEndStopY->Read() ? 100 : 0,
-                mEndStopZ->Read() ? 100 : 0);
+                endX ? 100 : 0,
+                endY ? 100 : 0,
+                endZ ? 100 : 0);
 
-            if(mBackoffTicks++ > BACKOFF_TIMEOUT_TICKS)
+            if(!endX && !endY && !endZ)
+                mMotionController->SetHomePosition();
+
+            mElapsedMs = HAL_GetTick() - mBackoffMs;
+            if(mElapsedMs > BACKOFF_TIMEOUT_MS)
                 mStepEngine->SetSteps(0, 0, 0);
 
-            if(!mEndStopX->Read() && !mEndStopY->Read() && !mEndStopZ->Read()) {
-                mMotionController->SetHomePosition();
-                HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-            }
             break;
 
         case State::Idle:
+            __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+            HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
             if(mStateRequest == StateRequest::Move && mPathSize != 0)
                 mMotionController->SetSegments({mPath, mPathSize});
+
+            if(mStateRequest == StateRequest::Home) {
+                HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+                mHomingMs = HAL_GetTick();
+            }
             break;
 
         case State::Moving: {
@@ -76,8 +95,6 @@ void Robot::Tick(){
 
         case State::Fault:
             mStepEngine->SetSteps(0, 0, 0);
-            mHomingTicks = 0;
-            mBackoffTicks = 0;
             mPathSize = 0;
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
             break;
@@ -86,32 +103,38 @@ void Robot::Tick(){
     // Transiciones de estados
     switch (mState) {
         case State::Init:
-            if(mStateRequest == StateRequest::Home)
+            if(mStateRequest == StateRequest::Home){
                 mState = State::Homing;
+                mStateRequest = StateRequest::None;
+            }
             break;
 
         case State::Homing:
-            if(mEndStopX->Read() && mEndStopY->Read() && mEndStopZ->Read())
+            if(endX && endY && endZ)
                 mState = State::Backoff;
 
-            if(mHomingTicks > HOMING_TIMEOUT_TICKS)
+            if(mElapsedMs > HOMING_TIMEOUT_MS)
                 mState = State::Fault;
             break;
 
         case State::Backoff:
-            if(!mEndStopX->Read() && !mEndStopY->Read() && !mEndStopZ->Read())
+            if(!endX && !endY && !endZ)
                 mState = State::Idle;
 
-            if(mBackoffTicks > BACKOFF_TIMEOUT_TICKS)
+            if(mElapsedMs > BACKOFF_TIMEOUT_MS)
                 mState = State::Fault;
             break;
 
         case State::Idle:
-            if(mStateRequest == StateRequest::Home)
+            if(mStateRequest == StateRequest::Home){
                 mState = State::Homing;
+                mStateRequest = StateRequest::None;
+            }
 
-            if(mStateRequest == StateRequest::Move)
+            if(mStateRequest == StateRequest::Move){
                 mState = State::Moving;
+                mStateRequest = StateRequest::None;
+            }
             break;
 
         case State::Moving:
@@ -122,8 +145,10 @@ void Robot::Tick(){
             break;
 
         case State::Fault:
-            if(mStateRequest == StateRequest::Reset)
+            if(mStateRequest == StateRequest::Reset){
                 mState = State::Init;
+                mStateRequest = StateRequest::None;
+            }
             break;
     }
 }

@@ -21,21 +21,23 @@ public:
         std::shared_ptr<IGpioInput> endStopZ,
         std::shared_ptr<IComms> comms);
 
-    void Run() override;
+    void Run() override {};
     void Tick() override;
     void SetCommandRequest(CommandRequest commandRequest) override;
     void EmergencyStop() override;
+    State GetState() const override { return mState; }
 
 private:
     CommandRequest ParseCommand(char* command, uint16_t size);
 
-    volatile State mState = StateRequest::Init;
+    volatile State mState = State::Init;
     StateRequest mStateRequest;
     MotionData mPath[MAX_SEGMENTS] = {};
     uint16_t mPathSize = 0;
 
-    uint32_t mHomingTicks = 0;
-    uint32_t mBackoffTicks = 0;
+    uint32_t mElapsedMs = 0;
+    uint32_t mHomingMs = 0;
+    uint32_t mBackoffMs = 0;
 
     std::shared_ptr<IMotionController> mMotionController;
     std::shared_ptr<IStepEngine> mStepEngine;
