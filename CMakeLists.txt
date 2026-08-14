@@ -76,7 +76,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     tripteron_firmware/inc/motion/kinematics
     tripteron_firmware/inc/motion/motion_controller
     tripteron_firmware/inc/robot
-    tripteron_firmware/inc/mechanics/axis
     tripteron_firmware/inc/common
 
 )
