@@ -1,14 +1,13 @@
 #include "robot.h"
 
+#include "comms_interface.h"
 #include "motion_controller_utils.h"
 #include "robot_types.h"
 #include "stm32f4xx_hal.h"
 
+#include <cstdint>
 #include <memory>
 #include <cstring>
-
-#define HOMING_TIMEOUT_MS 10000
-#define BACKOFF_TIMEOUT_MS 10000
 
 extern IMotionController* motionControllerInstance;
 
@@ -25,11 +24,15 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
     mMotionController = MakeIMotionController(
         MotionConfig{
             {200.0f, 200.0f, 200.0f},
-            {240.0f, 240.0f, 48.0f},
             {480.0f, 480.0f, 96.0f},
-            0.5f,
+            {960.0f, 960.0f, 192.0f},
+            0.2f,
             {20.0f, 20.0f, 25.0f}});
     motionControllerInstance = mMotionController.get();
+
+    mComms->RegisterCommandCallback([this](uint8_t* data, uint16_t len){
+        SetCommandRequest(ParseCommand(data, len));
+    });
 }
 
 void Robot::Tick(){
@@ -52,7 +55,7 @@ void Robot::Tick(){
                 endZ ? 0 : -500);
 
             mElapsedMs = HAL_GetTick() - mHomingMs;
-            if(mElapsedMs > HOMING_TIMEOUT_MS)
+            if(mElapsedMs > homingTimeoutMs)
                 mStepEngine->SetSteps(0, 0, 0);
 
             if(endX && endY && endZ)
@@ -69,7 +72,7 @@ void Robot::Tick(){
                 mMotionController->SetHomePosition();
 
             mElapsedMs = HAL_GetTick() - mBackoffMs;
-            if(mElapsedMs > BACKOFF_TIMEOUT_MS)
+            if(mElapsedMs > backoffTimeoutMs)
                 mStepEngine->SetSteps(0, 0, 0);
 
             break;
@@ -114,7 +117,7 @@ void Robot::Tick(){
             if(endX && endY && endZ)
                 mState = State::Backoff;
 
-            if(mElapsedMs > HOMING_TIMEOUT_MS)
+            else if(mElapsedMs > homingTimeoutMs)
                 mState = State::Fault;
             break;
 
@@ -122,7 +125,7 @@ void Robot::Tick(){
             if(!endX && !endY && !endZ)
                 mState = State::Idle;
 
-            if(mElapsedMs > BACKOFF_TIMEOUT_MS)
+            else if(mElapsedMs > backoffTimeoutMs)
                 mState = State::Fault;
             break;
 
@@ -167,12 +170,12 @@ void Robot::EmergencyStop() {
     mState = State::Fault;
 }
 
-CommandRequest Robot::ParseCommand(char* command, uint16_t size) {
+CommandRequest Robot::ParseCommand(uint8_t* command, uint16_t size) {
     CommandRequest request;
     request.stateRequest = StateRequest::None;
     request.pathSize = 0;
 
-    char* character = command;
+    uint8_t* character = command;
 
     switch (*character) {
         case 'H':
@@ -193,7 +196,7 @@ CommandRequest Robot::ParseCommand(char* command, uint16_t size) {
 
         uint16_t segmentCount = 0;
 
-        while(*character != '\0' && segmentCount < MAX_SEGMENTS) {
+        while(*character != '\0' && segmentCount < mMaxSegments) {
             if(*character == ' ') {
                 character++;
                 continue;
