@@ -36,6 +36,7 @@ void Robot::Tick(){
     bool endX = mEndStopX->Read();
     bool endY = mEndStopY->Read();
     bool endZ = mEndStopZ->Read();
+    bool segmentFlag = false;
     // Lógica de cada estado
     switch (mState) {
         case State::Init:
@@ -76,8 +77,8 @@ void Robot::Tick(){
         case State::Idle:
             __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
             HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-            if(mStateRequest == StateRequest::Move && mPathSize != 0)
-                mMotionController->SetSegments({mPath, mPathSize});
+            if(mStateRequest == StateRequest::Move)
+                segmentFlag = mMotionController->SetSegments({mPath, mPathSize});
 
             if(mStateRequest == StateRequest::Home) {
                 HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
@@ -132,7 +133,10 @@ void Robot::Tick(){
             }
 
             if(mStateRequest == StateRequest::Move){
-                mState = State::Moving;
+                if(segmentFlag)
+                    mState = State::Moving;
+                else
+                    mState = State::Fault;
                 mStateRequest = StateRequest::None;
             }
             break;

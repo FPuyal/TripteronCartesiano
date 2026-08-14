@@ -49,9 +49,8 @@ int main(){
     //    (FSM en Idle). Inyectarlo antes sobrescribiría el Home.
     CommandRequest moveCmd{};
     moveCmd.stateRequest = StateRequest::Move;
-    moveCmd.pathSize = 2;
-    moveCmd.path[0] = {50.0f, 50.0f, 20.0f};
-    moveCmd.path[1] = {100.0f, 80.0f, 30.0f};
+    moveCmd.pathSize = 1;
+    moveCmd.path[0] = {200.0f, 50.0f, 20.0f};
 
     bool movePedido = false;
 
@@ -64,5 +63,4 @@ int main(){
             movePedido = true;
         }
     }
-
 }
