@@ -11,8 +11,8 @@
 class MotionController : public IMotionController {
 public:
     MotionController(MotionConfig motionConfig);
-    void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; }
-    void SetSegments(MotionData* segments, std::size_t numSegments) override;
+    void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; mVelocity = {0.0f, 0.0f, 0.0f};}
+    bool SetSegments(MotionPath path) override;
     bool Move() override;
     void RequestUpdate() override { mUpdateMotion = true; }
     bool Update() override;
@@ -20,11 +20,13 @@ public:
     MotionData GetPosition() override { return mPosition; }
     MotionData GetVelocity() override { return mVelocity; }
     MotionData GetSteps() override { return mVelocity * mMotionConfig.stepsPerMm; }
+    bool IsFinished() override { return mFinished; }
 
 private:
     SegmentData* mSegments = nullptr;
     uint8_t mNumSegments = 0;
     uint8_t mCurrentSegment = 0;
+    bool mFinished = true;
 
     // Estado del robot (mm, mm/s)
     MotionData mPosition = {};

@@ -1,5 +1,4 @@
 #include "motion_controller.h"
-#include "motion_controller_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,18 +9,25 @@ MotionController::MotionController(MotionConfig motionConfig)
     mTrajectoryGenerator = MakeITrajectoryGenerator();
 };
 
-void MotionController::SetSegments(MotionData* segments, std::size_t numSegments) {
+bool MotionController::SetSegments(MotionPath path) {
     delete[] mSegments;
-    mSegments = new SegmentData[numSegments]{};
-    mNumSegments = numSegments;
+    mSegments = new SegmentData[path.size]{};
+    mNumSegments = path.size;
 
-    for(int i = 0; i < mNumSegments; i++)
-        mSegments[i].posTarget = segments[i];
+    mFinished = false;
+
+    for(int i = 0; i < mNumSegments; i++){
+        if(path.segments[i].x > mMotionConfig.posMax.x || path.segments[i].y > mMotionConfig.posMax.y || path.segments[i].z > mMotionConfig.posMax.z ||
+            path.segments[i].x < 0.0f || path.segments[i].y < 0.0f || path.segments[i].z < 0.0f)
+        return false;
+
+        mSegments[i].posTarget = path.segments[i];
+    }
 
     mCurrentSegment = 0;
 
     if(mNumSegments == 0)
-        return;
+        return false;
 
     // Geometría + límites de velocidad/aceleración propios de cada segmento (una sola vez).
     MotionData ref = mPosition;
@@ -79,14 +85,18 @@ void MotionController::SetSegments(MotionData* segments, std::size_t numSegments
         segment.finalVel = std::min(segment.finalVel, velAccelLimit);
         initVel = segment.finalVel;
     }
+
+    return true;
 }
 
 bool MotionController::Move() {
-    if(!mSegments || mCurrentSegment >= mNumSegments)
-        return false;
-
     if(!mTrajectoryGenerator->IsFinished())
         return true; // segmento en curso, nada que lanzar todavía
+
+    if(!mSegments || mCurrentSegment >= mNumSegments) {
+        mFinished = true;
+        return false;
+    }
 
     const SegmentData& segment = mSegments[mCurrentSegment];
 
