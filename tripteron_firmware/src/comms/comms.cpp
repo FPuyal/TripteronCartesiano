@@ -13,6 +13,10 @@ void Comms::RegisterCommandCallback(CommandCallback callback) {
     mCommandCallback = callback;
 }
 
+bool Comms::SendData(uint8_t* data, uint16_t len) {
+    return mUsb->Write(data, len);
+}
+
 void Comms::OnBytesReceived(uint8_t* data, uint16_t len) {
     for(int i = 0; i < len; i++) {
         mRawCommand[mRawCommandLength++] = data[i];

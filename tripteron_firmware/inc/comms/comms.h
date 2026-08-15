@@ -7,7 +7,7 @@ public:
     Comms(std::shared_ptr<IUsbCdc> usb);
 
     void RegisterCommandCallback(CommandCallback callback) override;
-    bool SendData(uint8_t* data, uint16_t len) override { return false; };
+    bool SendData(uint8_t* data, uint16_t len) override;
 
 private:
     void OnBytesReceived(uint8_t* data, uint16_t len);
