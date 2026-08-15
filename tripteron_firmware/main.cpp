@@ -39,28 +39,7 @@ int main(){
     hardwareManager->GetTimer(TimerId::Tim1)->Start();
     hardwareManager->GetTimer(TimerId::Tim2)->Start();
 
-    // --- TEST FSM (sin USB): se inyectan comandos a mano ---
-    // 1) Homing: Init -> Homing -> Backoff -> Idle
-    CommandRequest homeCmd{};
-    homeCmd.stateRequest = StateRequest::Home;
-    robot->SetCommandRequest(homeCmd);
-
-    // 2) Move: se prepara ya, pero NO se inyecta hasta que el homing termine
-    //    (FSM en Idle). Inyectarlo antes sobrescribiría el Home.
-    CommandRequest moveCmd{};
-    moveCmd.stateRequest = StateRequest::Move;
-    moveCmd.pathSize = 1;
-    moveCmd.path[0] = {200.0f, 50.0f, 20.0f};
-
-    bool movePedido = false;
-
     while(1){
         robot->Tick();
-
-        // En cuanto el homing termina y la FSM llega a Idle, se lanza el Move una sola vez.
-        if(!movePedido && robot->GetState() == State::Idle){
-            robot->SetCommandRequest(moveCmd);
-            movePedido = true;
-        }
     }
 }

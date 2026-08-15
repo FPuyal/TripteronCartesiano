@@ -11,6 +11,7 @@
 
 #include "robot_types.h"
 
+#include <cstdint>
 #include <memory>
 
 class Robot : public IRobot {
@@ -28,12 +29,17 @@ public:
     State GetState() const override { return mState; }
 
 private:
-    CommandRequest ParseCommand(char* command, uint16_t size);
+    CommandRequest ParseCommand(uint8_t* command, uint16_t size);
+
+    static constexpr uint16_t mMaxSegments = 20;
 
     volatile State mState = State::Init;
     StateRequest mStateRequest;
-    MotionData mPath[MAX_SEGMENTS] = {};
+    MotionData mPath[mMaxSegments] = {};
     uint16_t mPathSize = 0;
+
+    static constexpr uint16_t homingTimeoutMs = 10000;
+    static constexpr uint16_t backoffTimeoutMs = 5000;
 
     uint32_t mElapsedMs = 0;
     uint32_t mHomingMs = 0;

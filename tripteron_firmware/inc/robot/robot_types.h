@@ -2,7 +2,7 @@
 
 #include "motion_controller_utils.h"
 
-#define MAX_SEGMENTS 20
+static constexpr uint16_t maxSegments = 64;
 
 enum class State {
     Init,
@@ -22,6 +22,6 @@ enum class StateRequest {
 
 struct CommandRequest {
     StateRequest stateRequest;
-    MotionData path[MAX_SEGMENTS];
+    MotionData path[maxSegments];
     uint16_t pathSize;
 };

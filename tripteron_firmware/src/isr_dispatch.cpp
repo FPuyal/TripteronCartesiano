@@ -4,13 +4,11 @@
 #include "kinematics_interface.h"
 #include "motion_controller_interface.h"
 #include "stm32f4xx_hal_gpio.h"
-#include "usb_cdc_interface.h"
 #include "robot_interface.h"
 
 IStepEngine* stepEngineInstance = nullptr;
 IKinematics* kinematicsInstance = nullptr;
 IMotionController* motionControllerInstance = nullptr;
-IUsbCdc* usbCdcInstance = nullptr;
 IRobot* robotInterface = nullptr;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -27,8 +25,4 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if(stepEngineInstance) stepEngineInstance->Update();
         if(kinematicsInstance) kinematicsInstance->RequestUpdate();
     }
-}
-
-extern "C" void UsbCdc_DispatchRx(uint8_t *data, uint16_t len) {
-    if(usbCdcInstance) usbCdcInstance->HandleRxEvent(data, len);
 }

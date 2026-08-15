@@ -2,6 +2,12 @@
 
 #include "usbd_cdc_if.h"
 
+IUsbCdc* usbCdcInstance = nullptr;
+
+extern "C" void UsbCdc_DispatchRx(uint8_t *data, uint16_t len) {
+    if(usbCdcInstance) usbCdcInstance->HandleRxEvent(data, len);
+}
+
 bool UsbCdc::Write(uint8_t* data, uint16_t len) {
     return CDC_Transmit_FS(data, len) == USBD_OK;
 }
