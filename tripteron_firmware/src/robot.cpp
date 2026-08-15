@@ -166,6 +166,10 @@ void Robot::SetCommandRequest(CommandRequest commandRequest) {
     mPathSize = commandRequest.pathSize;
 }
 
+bool Robot::SendData(uint8_t* data, uint16_t len) {
+    return mComms->SendData(data, len);
+}
+
 void Robot::EmergencyStop() {
     mState = State::Fault;
 }

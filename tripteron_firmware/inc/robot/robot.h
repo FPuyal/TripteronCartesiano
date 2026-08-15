@@ -25,6 +25,7 @@ public:
     void Run() override {};
     void Tick() override;
     void SetCommandRequest(CommandRequest commandRequest) override;
+    bool SendData(uint8_t* data, uint16_t len) override;
     void EmergencyStop() override;
     State GetState() const override { return mState; }
 
