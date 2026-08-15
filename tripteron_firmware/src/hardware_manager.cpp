@@ -21,6 +21,8 @@
 #include <memory>
 
 extern IUsbCdc* usbCdcInstance;
+extern "C" volatile uint8_t UsbCdc_HostConnected;
+extern "C" volatile uint8_t UsbCdc_RxReady;
 
 extern "C" void SystemClock_Config(void);
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin);
@@ -88,6 +90,9 @@ void HardwareManager::InitHardware() {
     usbCdcInstance = mUsbCdc.get();
 
     MX_USB_DEVICE_Init();
+
+    while (!UsbCdc_HostConnected) {}
+    while (!UsbCdc_RxReady) {}
 }
 
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin) {

@@ -129,6 +129,12 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 void UsbCdc_DispatchRx(uint8_t *data, uint16_t len);
+
+/* Se pone a 1 cuando el host abre el puerto (SET_CONTROL_LINE_STATE). */
+volatile uint8_t UsbCdc_HostConnected = 0;
+
+/* Se pone a 1 cuando el host manda el primer byte (byte de "listo"). */
+volatile uint8_t UsbCdc_RxReady = 0;
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -228,7 +234,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
-
+      UsbCdc_HostConnected = 1;
     break;
 
     case CDC_SEND_BREAK:
@@ -261,6 +267,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+  UsbCdc_RxReady = 1;
   UsbCdc_DispatchRx(Buf, (uint16_t)*Len);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);

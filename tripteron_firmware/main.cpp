@@ -4,6 +4,7 @@
 #include "robot_interface.h"
 #include "comms_interface.h"
 
+#include "stm32f4xx_hal.h"
 #include "usb_cdc_interface.h"
 #include "utils.h"
 
@@ -39,7 +40,10 @@ int main(){
     hardwareManager->GetTimer(TimerId::Tim1)->Start();
     hardwareManager->GetTimer(TimerId::Tim2)->Start();
 
+    uint8_t mensaje[5] = {'H', 'o', 'l', 'a', 0xFF};
+
+    robot->SendData(mensaje, sizeof(mensaje));
+
     while(1){
-        robot->Tick();
     }
 }
