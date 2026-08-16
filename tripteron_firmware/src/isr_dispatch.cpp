@@ -6,8 +6,8 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "robot_interface.h"
 
-IStepEngine* stepEngineInstance = nullptr;
 IKinematics* kinematicsInstance = nullptr;
+IStepEngine* stepEngineInstance = nullptr;
 IMotionController* motionControllerInstance = nullptr;
 IRobot* robotInterface = nullptr;
 
@@ -24,5 +24,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if(motionControllerInstance) motionControllerInstance->RequestUpdate();
         if(stepEngineInstance) stepEngineInstance->Update();
         if(kinematicsInstance) kinematicsInstance->RequestUpdate();
+    }
+    if(htim->Instance == TIM3) {
+        if(robotInterface) robotInterface->RequestTelemetry();
     }
 }

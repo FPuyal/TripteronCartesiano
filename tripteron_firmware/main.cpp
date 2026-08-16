@@ -39,11 +39,9 @@ int main(){
 
     hardwareManager->GetTimer(TimerId::Tim1)->Start();
     hardwareManager->GetTimer(TimerId::Tim2)->Start();
-
-    uint8_t mensaje[5] = {'H', 'o', 'l', 'a', 0xFF};
-
-    robot->SendData(mensaje, sizeof(mensaje));
+    hardwareManager->GetTimer(TimerId::Tim3)->Start();
 
     while(1){
+        robot->Tick();
     }
 }

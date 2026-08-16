@@ -25,11 +25,12 @@ public:
     void Run() override {};
     void Tick() override;
     void SetCommandRequest(CommandRequest commandRequest) override;
-    bool SendData(uint8_t* data, uint16_t len) override;
+    void RequestTelemetry() override;
     void EmergencyStop() override;
     State GetState() const override { return mState; }
 
 private:
+    bool SendTelemetryData();
     CommandRequest ParseCommand(uint8_t* command, uint16_t size);
 
     static constexpr uint16_t mMaxSegments = 20;
@@ -45,6 +46,10 @@ private:
     uint32_t mElapsedMs = 0;
     uint32_t mHomingMs = 0;
     uint32_t mBackoffMs = 0;
+
+    uint8_t mTelemetryBuffer[52] {};
+    uint8_t mEndByte = 0xFF;
+    bool mTelemetryFlag = false;
 
     std::shared_ptr<IMotionController> mMotionController;
     std::shared_ptr<IStepEngine> mStepEngine;

@@ -14,7 +14,7 @@ public:
     virtual void Run() = 0;
     virtual void Tick() = 0;
     virtual void SetCommandRequest(CommandRequest commandRequest) = 0;
-    virtual bool SendData(uint8_t* data, uint16_t len) = 0;
+    virtual void RequestTelemetry() = 0;
     virtual void EmergencyStop() = 0;
     virtual State GetState() const = 0;
 };

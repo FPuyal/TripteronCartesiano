@@ -1,13 +1,16 @@
 #include "robot.h"
 
 #include "comms_interface.h"
+#include "motion_controller_interface.h"
 #include "motion_controller_utils.h"
 #include "robot_types.h"
 #include "stm32f4xx_hal.h"
 
-#include <cstdint>
 #include <memory>
+#include <cstdint>
 #include <cstring>
+#include <string.h>
+#include <cmath>
 
 extern IMotionController* motionControllerInstance;
 
@@ -92,8 +95,14 @@ void Robot::Tick(){
         case State::Moving: {
             mMotionController->Move();
             mMotionController->Update();
+
             MotionData steps = mMotionController->GetSteps();
             mStepEngine->SetSteps(steps.x, steps.y, steps.z);
+
+            SendTelemetryData();
+
+            if(mMotionController->IsFinished())
+                mComms->SendData(&mEndByte, 1);
             break;
         }
 
@@ -166,8 +175,42 @@ void Robot::SetCommandRequest(CommandRequest commandRequest) {
     mPathSize = commandRequest.pathSize;
 }
 
-bool Robot::SendData(uint8_t* data, uint16_t len) {
-    return mComms->SendData(data, len);
+void Robot::RequestTelemetry() {
+    mTelemetryFlag = true;
+}
+
+bool Robot::SendTelemetryData() {
+    if(mTelemetryFlag) {
+        mTelemetryFlag = false;
+
+        MotionData pos = mMotionController->GetPosition();
+        MotionData vel = mMotionController->GetVelocity();
+        float motion[6] = {pos.x, pos.y, pos.z,
+            vel.x, vel.y, vel.z};
+
+        auto parseData = [](float data, uint8_t* parsedData) {
+            int scaleData = (int)lroundf(fabsf(data) * 100.0f);
+            parsedData[0] = ' ';
+            parsedData[1] = data >= 0 ? '+' : '-';
+            parsedData[2] = '0' + (scaleData / 10000) % 10;
+            parsedData[3] = '0' + (scaleData / 1000) % 10;
+            parsedData[4] = '0' + (scaleData / 100) % 10;
+            parsedData[5] = ',';
+            parsedData[6] = '0' + (scaleData / 10) % 10;
+            parsedData[7] = '0' +  scaleData % 10;
+        };
+
+        memcpy(mTelemetryBuffer, "[MC]", 4);
+        uint8_t* bufferPtr = &mTelemetryBuffer[4];
+        for(auto i : motion){
+            parseData(i, bufferPtr);
+            bufferPtr += 8;
+        }
+
+        return mComms->SendData(mTelemetryBuffer, sizeof(mTelemetryBuffer));
+    }
+
+    return false;
 }
 
 void Robot::EmergencyStop() {
