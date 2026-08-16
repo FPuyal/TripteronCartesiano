@@ -4,15 +4,15 @@ struct MotionData {
     float x;
     float y;
     float z;
-};
 
-inline MotionData operator*(const MotionData& a, const MotionData& b) {
-    MotionData result = a;
-    result.x *= b.x;
-    result.y *= b.y;
-    result.z *= b.z;
-    return result;
-}
+    MotionData operator*(const MotionData& other) const {
+        MotionData result = *this;
+        result.x *= other.x;
+        result.y *= other.y;
+        result.z *= other.z;
+        return result;
+    }
+};
 
 struct MotionConfig {
     MotionData posMax;

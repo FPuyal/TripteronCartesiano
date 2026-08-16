@@ -1,4 +1,5 @@
 #include "motion_controller.h"
+#include "motion_controller_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -30,6 +31,7 @@ bool MotionController::SetSegments(MotionPath path) {
         return false;
 
     // Geometría + límites de velocidad/aceleración propios de cada segmento (una sola vez).
+    mPathInit = mPosition;
     MotionData ref = mPosition;
     for(std::size_t i = 0; i < mNumSegments; i++) {
         SegmentData& segment = mSegments[i];
@@ -127,19 +129,17 @@ bool MotionController::Update() {
     const float pathVel = mTrajectoryGenerator->GetVelocity();
     const float pathPos = mTrajectoryGenerator->GetPosition();
 
-    const std::size_t idx = mCurrentSegment - 1; // segmento actualmente en ejecución (mCurrentSegment ya apunta al siguiente)
+    uint8_t currentSegment = mCurrentSegment - 1; // segmento actualmente en ejecución (mCurrentSegment ya apunta al siguiente)
 
-    MotionData initPos = {0.0f, 0.0f, 0.0f};
-    if(idx != 0)
-        initPos = mSegments[idx-1].posTarget;
+    MotionData initPos = (currentSegment == 0) ? mPathInit : mSegments[currentSegment-1].posTarget;
 
-    mPosition = {initPos.x + pathPos * mSegments[idx].cos.x,
-        initPos.y + pathPos * mSegments[idx].cos.y,
-        initPos.z + pathPos * mSegments[idx].cos.z};
+    mPosition = {initPos.x + pathPos * mSegments[currentSegment].cos.x,
+        initPos.y + pathPos * mSegments[currentSegment].cos.y,
+        initPos.z + pathPos * mSegments[currentSegment].cos.z};
 
-    mVelocity = {pathVel * mSegments[idx].cos.x,
-        pathVel * mSegments[idx].cos.y,
-        pathVel * mSegments[idx].cos.z};
+    mVelocity = {pathVel * mSegments[currentSegment].cos.x,
+        pathVel * mSegments[currentSegment].cos.y,
+        pathVel * mSegments[currentSegment].cos.z};
 
     return true;
 }

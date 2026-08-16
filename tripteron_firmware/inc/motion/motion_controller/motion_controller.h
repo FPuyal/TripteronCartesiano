@@ -29,6 +29,7 @@ private:
     bool mFinished = true;
 
     // Estado del robot (mm, mm/s)
+    MotionData mPathInit = {};
     MotionData mPosition = {};
     MotionData mVelocity = {};
 
