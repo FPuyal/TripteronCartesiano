@@ -17,6 +17,7 @@
 #include "tmc_interface.h"
 #include "gpio_input_interface.h"
 #include "usb_cdc_interface.h"
+#include "utils.h"
 
 #include <memory>
 
@@ -34,6 +35,7 @@ void HardwareManager::InitHardware() {
 
     MX_TIM1_Init();
     MX_TIM2_Init();
+    MX_TIM3_Init();
 
     I2C_BusRecovery(GPIOB, GPIO_PIN_8, GPIOB, GPIO_PIN_9);
     I2C_BusRecovery(GPIOB, GPIO_PIN_10, GPIOB, GPIO_PIN_3);
@@ -49,6 +51,7 @@ void HardwareManager::InitHardware() {
 
     mTimers[TimerId::Tim1] = MakeITimer(&htim1);
     mTimers[TimerId::Tim2] = MakeITimer(&htim2);
+    mTimers[TimerId::Tim3] = MakeITimer(&htim3);
 
     mEncoders[EncoderId::XEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c1, 0x6C));
     mEncoders[EncoderId::YEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c2, 0x6C));
@@ -85,6 +88,7 @@ void HardwareManager::InitHardware() {
 
     mTimers[TimerId::Tim1]->Stop();
     mTimers[TimerId::Tim2]->Stop();
+    mTimers[TimerId::Tim3]->Stop();
 
     mUsbCdc = MakeIUsbCdc();
     usbCdcInstance = mUsbCdc.get();

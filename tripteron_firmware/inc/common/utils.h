@@ -8,6 +8,7 @@
 enum class TimerId {
     Tim1 = 0,
     Tim2,
+    Tim3,
     COUNT
 };
 
