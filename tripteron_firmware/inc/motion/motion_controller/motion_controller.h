@@ -1,7 +1,7 @@
 #pragma once
 
 #include "motion_controller_interface.h"
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 #include "trajectory_generator_interface.h"
 
 #include <array>

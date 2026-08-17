@@ -1,6 +1,6 @@
 #pragma once
 
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 
 static constexpr uint16_t maxSegments = 64;
 

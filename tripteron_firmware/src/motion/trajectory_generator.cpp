@@ -1,5 +1,5 @@
 #include "trajectory_generator.h"
-#include "trajectory_generator_utils.h"
+#include "trajectory_generator_types.h"
 
 #include <algorithm>
 #include <cmath>

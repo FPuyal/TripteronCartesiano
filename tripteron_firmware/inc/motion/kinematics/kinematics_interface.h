@@ -1,13 +1,9 @@
 #pragma once
 
 #include "encoder_interface.h"
+#include "kinematics_types.h"
 
 #include <memory>
-
-struct KinematicState {
-    float pos[3];
-    float vel[3];
-};
 
 class IKinematics {
 public:

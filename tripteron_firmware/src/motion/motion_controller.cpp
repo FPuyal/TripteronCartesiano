@@ -1,5 +1,5 @@
 #include "motion_controller.h"
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 
 #include <algorithm>
 #include <cmath>

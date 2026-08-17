@@ -17,7 +17,7 @@
 #include "tmc_interface.h"
 #include "gpio_input_interface.h"
 #include "usb_cdc_interface.h"
-#include "utils.h"
+#include "hardware_manager_types.h"
 
 #include <memory>
 

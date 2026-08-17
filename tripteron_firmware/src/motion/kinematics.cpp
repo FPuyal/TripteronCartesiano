@@ -24,9 +24,9 @@ void Kinematics::CaptureHome() {
     HAL_Delay(2);
 
     CalculateKinematics();
-    mHome[0] = mPreviousState.pos[0];
-    mHome[1] = mPreviousState.pos[1];
-    mHome[2] = mPreviousState.pos[2];
+    mHome.x = mPreviousState.pos.x;
+    mHome.y = mPreviousState.pos.y;
+    mHome.z = mPreviousState.pos.z;
 }
 
 void Kinematics::Update() {
@@ -85,7 +85,7 @@ void Kinematics::CalculateKinematics() {
         return; // sin raiz en el bracket -> lecturas de encoder inconsistentes
 
     // Warm start: w del ciclo anterior, saturado al bracket
-    float w = mPreviousState.pos[2] * mPreviousState.pos[2];
+    float w = mPreviousState.pos.z * mPreviousState.pos.z;
     if (w < lo) w = lo;
     if (w > hi) w = hi;
 
@@ -123,17 +123,17 @@ void Kinematics::CalculateKinematics() {
     const float z = sqrtf(fmaxf(w, 0.0f));
 
     // salida restada (cosmético)
-    mCurrentState.pos[0] = x - mHome[0];
-    mCurrentState.pos[1] = y - mHome[1];
-    mCurrentState.pos[2] = z - mHome[2];
-    mCurrentState.vel[0] = (x - mPreviousState.pos[0]) / TIME_STEP;
-    mCurrentState.vel[1] = (y - mPreviousState.pos[1]) / TIME_STEP;
-    mCurrentState.vel[2] = (z - mPreviousState.pos[2]) / TIME_STEP;
+    mCurrentState.pos.x = x - mHome.x;
+    mCurrentState.pos.y = y - mHome.y;
+    mCurrentState.pos.z = z - mHome.z;
+    mCurrentState.vel.x = (x - mPreviousState.pos.x) / TIME_STEP;
+    mCurrentState.vel.y = (y - mPreviousState.pos.y) / TIME_STEP;
+    mCurrentState.vel.z = (z - mPreviousState.pos.z) / TIME_STEP;
 
     // semilla Newton: pose CRUDA
-    mPreviousState.pos[0] = x;
-    mPreviousState.pos[1] = y;
-    mPreviousState.pos[2] = z;
+    mPreviousState.pos.x = x;
+    mPreviousState.pos.y = y;
+    mPreviousState.pos.z = z;
 }
 
 std::shared_ptr<IKinematics> MakeIKinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder){

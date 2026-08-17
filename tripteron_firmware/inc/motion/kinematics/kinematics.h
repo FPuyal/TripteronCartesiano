@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kinematics_interface.h"
+#include "motion_controller_types.h"
 #include <memory>
 
 class Kinematics : public IKinematics {
@@ -15,9 +16,9 @@ public:
 private:
     void CalculateKinematics();
 
-    KinematicState mCurrentState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-    KinematicState mPreviousState { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-    float mHome[3] {0.0f, 0.0f, 0.0f};
+    KinematicState mCurrentState {};
+    KinematicState mPreviousState {};
+    MotionData mHome = {};
 
     std::shared_ptr<IEncoder> mXEncoder;
     std::shared_ptr<IEncoder> mYEncoder;

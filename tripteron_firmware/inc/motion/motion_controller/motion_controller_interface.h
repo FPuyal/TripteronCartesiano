@@ -1,7 +1,7 @@
 #pragma once
 
 #include "step_engine_interface.h"
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 
 #include <array>
 #include <memory>
