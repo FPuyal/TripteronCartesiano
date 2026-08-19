@@ -1,8 +1,9 @@
 #include "robot.h"
 
 #include "comms_interface.h"
+#include "kinematics_interface.h"
 #include "motion_controller_interface.h"
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 #include "robot_types.h"
 #include "stm32f4xx_hal.h"
 
@@ -18,11 +19,13 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopX,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
+        std::shared_ptr<IKinematics> kinematics,
         std::shared_ptr<IComms> comms) :
         mStepEngine(stepEngine),
         mEndStopX(endStopX),
         mEndStopY(endStopY),
         mEndStopZ(endStopZ),
+        mKinematics(kinematics),
         mComms(comms) {
     mMotionController = MakeIMotionController(
         MotionConfig{
@@ -38,7 +41,7 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
     });
 }
 
-void Robot::Tick(){
+void Robot::Run(){
     bool endX = mEndStopX->Read();
     bool endY = mEndStopY->Read();
     bool endZ = mEndStopZ->Read();
@@ -71,8 +74,10 @@ void Robot::Tick(){
                 endY ? 100 : 0,
                 endZ ? 100 : 0);
 
-            if(!endX && !endY && !endZ)
+            if(!endX && !endY && !endZ) {
                 mMotionController->SetHomePosition();
+                mKinematics->CaptureHome();
+            }
 
             mElapsedMs = HAL_GetTick() - mBackoffMs;
             if(mElapsedMs > backoffTimeoutMs)
@@ -95,6 +100,7 @@ void Robot::Tick(){
         case State::Moving: {
             mMotionController->Move();
             mMotionController->Update();
+            // mKinematics->Update();
 
             MotionData steps = mMotionController->GetSteps();
             mStepEngine->SetSteps(steps.x, steps.y, steps.z);
@@ -188,6 +194,11 @@ bool Robot::SendTelemetryData() {
         float motion[6] = {pos.x, pos.y, pos.z,
             vel.x, vel.y, vel.z};
 
+        MotionData kinematicsPos = {mKinematics->GetCurrentState().pos};
+        MotionData kinematicsVel = mKinematics->GetCurrentState().vel;
+        float kinematics[6] = {kinematicsPos.x, kinematicsPos.y, kinematicsPos.z,
+            kinematicsVel.x, kinematicsVel.y, kinematicsVel.z};
+
         auto parseData = [](float data, uint8_t* parsedData) {
             int scaleData = (int)lroundf(fabsf(data) * 100.0f);
             parsedData[0] = ' ';
@@ -200,9 +211,20 @@ bool Robot::SendTelemetryData() {
             parsedData[7] = '0' +  scaleData % 10;
         };
 
-        memcpy(mTelemetryBuffer, "[MC]", 4);
-        uint8_t* bufferPtr = &mTelemetryBuffer[4];
+        uint8_t* bufferPtr = mTelemetryBuffer;
+
+        memcpy(bufferPtr, "[MC]", 4);
+        bufferPtr += 4;
         for(auto i : motion){
+            parseData(i, bufferPtr);
+            bufferPtr += 8;
+        }
+
+        *(bufferPtr++) = ' ';
+
+        memcpy(bufferPtr, "[KM]", 4);
+        bufferPtr += 4;
+        for(auto i : kinematics){
             parseData(i, bufferPtr);
             bufferPtr += 8;
         }
@@ -296,6 +318,7 @@ std::shared_ptr<IRobot> MakeIRobot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopX,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
+        std::shared_ptr<IKinematics> kinematics,
         std::shared_ptr<IComms> comms) {
-    return std::make_shared<Robot>(stepEngine, endStopX, endStopY, endStopZ, comms);
+    return std::make_shared<Robot>(stepEngine, endStopX, endStopY, endStopZ, kinematics, comms);
 }

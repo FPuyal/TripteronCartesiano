@@ -1,9 +1,7 @@
 #pragma once
 
-#include "comms.h"
 #include "gpio_input_interface.h"
 #include "kinematics_interface.h"
-#include "motion_controller.h"
 #include "motion_controller_interface.h"
 #include "robot_interface.h"
 #include "step_engine_interface.h"
@@ -20,10 +18,10 @@ public:
         std::shared_ptr<IGpioInput> endStopX,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
+        std::shared_ptr<IKinematics> kinematics,
         std::shared_ptr<IComms> comms);
 
-    void Run() override {};
-    void Tick() override;
+    void Run() override;
     void SetCommandRequest(CommandRequest commandRequest) override;
     void RequestTelemetry() override;
     void EmergencyStop() override;
@@ -47,7 +45,7 @@ private:
     uint32_t mHomingMs = 0;
     uint32_t mBackoffMs = 0;
 
-    uint8_t mTelemetryBuffer[52] {};
+    uint8_t mTelemetryBuffer[105] {};
     uint8_t mEndByte = 0xFF;
     bool mTelemetryFlag = false;
 
@@ -56,6 +54,7 @@ private:
     std::shared_ptr<IGpioInput> mEndStopX;
     std::shared_ptr<IGpioInput> mEndStopY;
     std::shared_ptr<IGpioInput> mEndStopZ;
+    std::shared_ptr<IKinematics> mKinematics;
     std::shared_ptr<IComms> mComms;
 };
 

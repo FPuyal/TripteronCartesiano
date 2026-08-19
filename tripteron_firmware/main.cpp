@@ -6,12 +6,12 @@
 
 #include "stm32f4xx_hal.h"
 #include "usb_cdc_interface.h"
-#include "utils.h"
 
 #include <memory>
 
 extern IStepEngine* stepEngineInstance;
 extern IRobot* robotInterface;
+extern IKinematics* kinematicsInstance;
 
 int main(){
 
@@ -29,10 +29,18 @@ int main(){
     );
     stepEngineInstance = stepEngine.get();
 
+    auto kinematics = MakeIKinematics(
+        hardwareManager->GetEncoder(EncoderId::XEncoder),
+        hardwareManager->GetEncoder(EncoderId::YEncoder),
+        hardwareManager->GetEncoder(EncoderId::ZEncoder)
+    );
+    kinematicsInstance = kinematics.get();
+
     auto robot = MakeIRobot(stepEngine,
         hardwareManager->GetEndStop(EndStopId::XEnd),
         hardwareManager->GetEndStop(EndStopId::YEnd),
         hardwareManager->GetEndStop(EndStopId::ZEnd),
+        kinematics,
         comms
     );
     robotInterface = robot.get();
@@ -42,6 +50,6 @@ int main(){
     hardwareManager->GetTimer(TimerId::Tim3)->Start();
 
     while(1){
-        robot->Tick();
+        robot->Run();
     }
 }
