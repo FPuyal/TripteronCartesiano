@@ -1,21 +1,25 @@
 #include "kinematics.h"
 #include <cmath>
 
-#define DIST    180.0f // Length of the robot arm in mm
-#define GAMMAX  76.9044f  // Offset of alphaX in º
-#define GAMMAY  77.7114f  // Offset of alphaY in º
-#define GAMMAZ  22.5280f  // Offset of alphaZ in º
-#define LY      261.6f  // Distance from Y axis to X arm base in mm
-#define LX      263.6f  // Distance from X axis to Y arm base in mm
-#define DX      85.7f // Distance from X axis to Z arm base in mm
-#define DY      35.5f // Distance from Y axis to Z arm base in mm
-#define L1      40.0f  // Y Offset of X arm in mm
-#define L2      40.0f  // X Offset of Y arm in mm
-#define L3      25.0f  // X Offset of Z arm in mm
+namespace {
+    constexpr float kDist   = 180.0f;    // Longitud del brazo en mm
+    constexpr float kGammaX = 76.9044f;  // Offset de alphaX en º
+    constexpr float kGammaY = 77.7114f;
+    constexpr float kGammaZ = 22.5280f;
+    constexpr float kLY     = 261.6f;
+    constexpr float kLX     = 263.6f;
+    constexpr float kDX     = 85.7f;
+    constexpr float kDY     = 35.5f;
+    constexpr float kL1     = 40.0f;
+    constexpr float kL2     = 40.0f;
+    constexpr float kL3     = 25.0f;
 
-#define MAX_ITERATIONS 8
-#define FK_TOL 0.01f
-#define TIME_STEP 0.001f // Time step in seconds
+    constexpr int   kMaxIterations = 8;
+    constexpr float kFkTol         = 0.01f;
+    constexpr float kTimeStep      = 0.001f;
+
+    constexpr float kDegToRad = 0.01745329252f;
+}
 
 void Kinematics::CaptureHome() {
     if (!mXEncoder->SetOffset()) return;
@@ -44,17 +48,17 @@ void Kinematics::CalculateKinematics() {
     if (!mZEncoder->ReadAngle(alphaZ)) return;
 
     auto lawOfCosines = [&](float a_deg){
-        const float a = a_deg * 0.01745329252f; // deg→rad
-        return 2*DIST*DIST*(1 - cosf(a));
+        const float a = a_deg * kDegToRad; // deg→rad
+        return 2*kDist*kDist*(1 - cosf(a));
     };
 
-    const float A = lawOfCosines(alphaX + GAMMAX);
-    const float B = lawOfCosines(alphaY + GAMMAY);
-    const float C = lawOfCosines(alphaZ + GAMMAZ);
-    const float P = LY - L1;
-    const float Q = LX - L2;
-    const float R = DX - L3;
-    const float S = DY;
+    const float A = lawOfCosines(alphaX + kGammaX);
+    const float B = lawOfCosines(alphaY + kGammaY);
+    const float C = lawOfCosines(alphaZ + kGammaZ);
+    const float P = kLY - kL1;
+    const float Q = kLX - kL2;
+    const float R = kDX - kL3;
+    const float S = kDY;
 
     // Reduccion a una ecuacion escalar en w = z^2:
     //   x(w) = Q - sqrt(B - w)      dx/dw = 1 / (2*sqrt(B - w))
@@ -90,10 +94,10 @@ void Kinematics::CalculateKinematics() {
     if (w > hi) w = hi;
 
     bool converged = false;
-    for(int i = 0; i < MAX_ITERATIONS; i++) {
+    for(int i = 0; i < kMaxIterations; i++) {
         float g;
         evalG(w, g, dg);
-        if (fabsf(g) < FK_TOL) {
+        if (fabsf(g) < kFkTol) {
             converged = true;
             break;
         }
@@ -126,9 +130,9 @@ void Kinematics::CalculateKinematics() {
     mCurrentState.pos.x = x - mHome.x;
     mCurrentState.pos.y = y - mHome.y;
     mCurrentState.pos.z = z - mHome.z;
-    mCurrentState.vel.x = (x - mPreviousState.pos.x) / TIME_STEP;
-    mCurrentState.vel.y = (y - mPreviousState.pos.y) / TIME_STEP;
-    mCurrentState.vel.z = (z - mPreviousState.pos.z) / TIME_STEP;
+    mCurrentState.vel.x = (x - mPreviousState.pos.x) / kTimeStep;
+    mCurrentState.vel.y = (y - mPreviousState.pos.y) / kTimeStep;
+    mCurrentState.vel.z = (z - mPreviousState.pos.z) / kTimeStep;
 
     // semilla Newton: pose CRUDA
     mPreviousState.pos.x = x;
