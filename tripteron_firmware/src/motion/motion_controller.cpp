@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 
 MotionController::MotionController(MotionConfig motionConfig)
         : mMotionConfig(motionConfig) {

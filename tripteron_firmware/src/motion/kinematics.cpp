@@ -1,4 +1,5 @@
 #include "kinematics.h"
+#include "kinematics_types.h"
 #include <cmath>
 
 namespace {

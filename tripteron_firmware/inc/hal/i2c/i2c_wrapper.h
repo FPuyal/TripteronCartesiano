@@ -2,8 +2,6 @@
 
 #include "i2c_wrapper_interface.h"
 
-#include <functional>
-
 class I2CWrapper : public II2CWrapper {
 public:
     I2CWrapper(I2C_HandleTypeDef* hi2c, uint16_t devAddress);

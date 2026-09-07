@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kinematics_interface.h"
+#include "kinematics_types.h"
 #include "motion_controller_types.h"
 #include <memory>
 

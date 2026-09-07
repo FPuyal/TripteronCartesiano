@@ -11,12 +11,8 @@
 #include "stm32f4xx_hal_gpio.h"
 
 // Resource interfaces includes
-#include "timer_interface.h"
 #include "gpio_output_interface.h"
 #include "uart_interface.h"
-#include "tmc_interface.h"
-#include "gpio_input_interface.h"
-#include "usb_cdc_interface.h"
 #include "hardware_manager_types.h"
 
 #include <memory>

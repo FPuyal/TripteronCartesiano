@@ -2,7 +2,6 @@
 
 #include "tmc_interface.h"
 
-#include <cstdint>
 #include <memory>
 
 class Tmc : public ITmc {

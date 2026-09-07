@@ -2,6 +2,7 @@
 
 #include "comms_interface.h"
 #include "kinematics_interface.h"
+#include "kinematics_types.h"
 #include "motion_controller_interface.h"
 #include "motion_controller_types.h"
 #include "robot_types.h"
@@ -10,7 +11,6 @@
 #include <memory>
 #include <cstdint>
 #include <cstring>
-#include <string.h>
 #include <cmath>
 
 extern IMotionController* motionControllerInstance;
@@ -61,7 +61,7 @@ void Robot::Run(){
                 endZ ? 0 : -500);
 
             mElapsedMs = HAL_GetTick() - mHomingMs;
-            if(mElapsedMs > homingTimeoutMs)
+            if(mElapsedMs > kHomingTimeoutMs)
                 mStepEngine->SetSteps(0, 0, 0);
 
             if(endX && endY && endZ)
@@ -80,7 +80,7 @@ void Robot::Run(){
             }
 
             mElapsedMs = HAL_GetTick() - mBackoffMs;
-            if(mElapsedMs > backoffTimeoutMs)
+            if(mElapsedMs > kBackoffTimeoutMs)
                 mStepEngine->SetSteps(0, 0, 0);
 
             break;
@@ -132,7 +132,7 @@ void Robot::Run(){
             if(endX && endY && endZ)
                 mState = State::Backoff;
 
-            else if(mElapsedMs > homingTimeoutMs)
+            else if(mElapsedMs > kHomingTimeoutMs)
                 mState = State::Fault;
             break;
 
@@ -140,7 +140,7 @@ void Robot::Run(){
             if(!endX && !endY && !endZ)
                 mState = State::Idle;
 
-            else if(mElapsedMs > backoffTimeoutMs)
+            else if(mElapsedMs > kBackoffTimeoutMs)
                 mState = State::Fault;
             break;
 

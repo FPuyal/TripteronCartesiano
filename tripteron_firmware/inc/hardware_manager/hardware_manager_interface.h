@@ -1,5 +1,6 @@
 #pragma once
 
+#include "timer_interface.h"
 #include "gpio_input_interface.h"
 #include "tmc_interface.h"
 #include "encoder_interface.h"
@@ -7,7 +8,6 @@
 #include "hardware_manager_types.h"
 
 #include <memory>
-#include <map>
 
 class IHardwareManager {
 public:

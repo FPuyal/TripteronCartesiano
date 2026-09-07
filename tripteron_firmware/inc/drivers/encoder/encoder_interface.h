@@ -3,6 +3,7 @@
 #include "i2c_wrapper_interface.h"
 
 #include <memory>
+#include <cstdint>
 
 class IEncoder {
 public:

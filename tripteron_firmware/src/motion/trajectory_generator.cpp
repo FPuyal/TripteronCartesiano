@@ -3,16 +3,14 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <memory>
-#include <limits>
-#include <utility>
 #include <vector>
 
-#define UPDATE_DT 0.001 // Se define en base a la frecuancia de interrupción del TIM2
+static constexpr float kUpdateDt = 0.001f; // Se define en base a la frecuancia de interrupción del TIM2
+static constexpr float eps = 1e-3f;
 
 bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState final, TrajectoryConfig config) {
-    if(init.pos < 0.0 || final.pos < 0.0 || init.vel < 0.0 || final.vel < 0.0 || final.pos < init.pos)
+    if(init.pos < 0.0f || final.pos < 0.0f || init.vel < 0.0f || final.vel < 0.0f || final.pos < init.pos)
         return false;
 
     mConfig = config;
@@ -27,12 +25,12 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
     mFinal = final;
 
     mCurrentPhase = 0;
-    mPhaseTime = 0.0;
+    mPhaseTime = 0.0f;
     mPos0 = mInit.pos;
     mVel0 = mInit.vel;
     mPos = mInit.pos;
     mVel = mInit.vel;
-    mAcc = 0.0;
+    mAcc = 0.0f;
 
     if(!GeneratePhases()) {
         mFinished = true;   // nada ejecutable: no dejamos el generador en estado zombi
@@ -86,10 +84,10 @@ bool TrajectoryGenerator::Update() {
     if(mPhases.empty() || mFinished)
         return false;
 
-    mPhaseTime += UPDATE_DT;
+    mPhaseTime += kUpdateDt;
     mAcc = mPhases[mCurrentPhase].accLim;
     mVel = mVel0 + mAcc * mPhaseTime;
-    mPos = mPos0 + mVel0 * mPhaseTime + 0.5 * mAcc * mPhaseTime * mPhaseTime;
+    mPos = mPos0 + mVel0 * mPhaseTime + 0.5f * mAcc * mPhaseTime * mPhaseTime;
 
     auto advancePhase = [this]()->void {
         mCurrentPhase++;
@@ -97,19 +95,19 @@ bool TrajectoryGenerator::Update() {
             mFinished = true;
             mPos = mFinal.pos;
             mVel = mFinal.vel;
-            mAcc = 0.0;
+            mAcc = 0.0f;
             return;
         }
-        mPhaseTime = 0.0;
+        mPhaseTime = 0.0f;
         mPos0 = mPos;
         mVel0 = mVel;
     };
 
     if(mPhases[mCurrentPhase].endCondition == EndCondition::VEL){
-        float sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0 : -1.0;
+        float sign = (mPhases[mCurrentPhase].velLim >= mVel0) ? 1.0f : -1.0f;
         if(sign * (mPhases[mCurrentPhase].velLim - mVel) <= eps) {
             mVel = mPhases[mCurrentPhase].velLim;
-            mAcc = 0.0;
+            mAcc = 0.0f;
             advancePhase();
             return true;
         }
@@ -119,7 +117,7 @@ bool TrajectoryGenerator::Update() {
         if((mPhases[mCurrentPhase].posLim - mPos) <= eps) {
             mPos = mPhases[mCurrentPhase].posLim;
             mVel = mPhases[mCurrentPhase].velLim;
-            mAcc = 0.0;
+            mAcc = 0.0f;
             advancePhase();
             return true;
         }
@@ -131,13 +129,13 @@ void TrajectoryGenerator::Reset() {
     mCurrentPhase = 0;
     mFinished = true;
 
-    mPhaseTime = 0.0;
-    mPos0 = 0.0;
-    mVel0 = 0.0;
+    mPhaseTime = 0.0f;
+    mPos0 = 0.0f;
+    mVel0 = 0.0f;
 
-    mPos = 0.0;
-    mVel = 0.0;
-    mAcc = 0.0;
+    mPos = 0.0f;
+    mVel = 0.0f;
+    mAcc = 0.0f;
 }
 
 std::unique_ptr<ITrajectoryGenerator> MakeITrajectoryGenerator() {

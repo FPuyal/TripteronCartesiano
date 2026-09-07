@@ -28,8 +28,8 @@ private:
     volatile uint16_t mAccumulator[3] = {0, 0, 0};
     volatile uint8_t mPrevDir[3] = {0, 0, 0};
 
-    static constexpr uint8_t mBufferSize = 40;
-    volatile uint8_t mBuffer[mBufferSize] = {};
+    static constexpr uint8_t kBufferSize = 40;
+    volatile uint8_t mBuffer[kBufferSize] = {};
     volatile uint8_t mBufferIndex = 0;
     volatile bool mBufferFlag = false;
 };

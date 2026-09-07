@@ -38,8 +38,8 @@ private:
     MotionData mPath[mMaxSegments] = {};
     uint16_t mPathSize = 0;
 
-    static constexpr uint16_t homingTimeoutMs = 10000;
-    static constexpr uint16_t backoffTimeoutMs = 5000;
+    static constexpr uint16_t kHomingTimeoutMs = 10000;
+    static constexpr uint16_t kBackoffTimeoutMs = 5000;
 
     uint32_t mElapsedMs = 0;
     uint32_t mHomingMs = 0;

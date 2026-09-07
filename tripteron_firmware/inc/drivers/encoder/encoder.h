@@ -1,7 +1,6 @@
 #pragma once
 
 #include "encoder_interface.h"
-#include <cstdint>
 
 class Encoder : public IEncoder {
 public:

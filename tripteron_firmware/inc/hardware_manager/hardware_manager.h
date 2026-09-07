@@ -1,9 +1,9 @@
 #pragma once
 
 #include "hardware_manager_interface.h"
-#include "timer_interface.h"
+
 #include <memory>
-#include <ostream>
+#include <map>
 
 class HardwareManager : public IHardwareManager {
 public:

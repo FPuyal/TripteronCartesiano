@@ -4,6 +4,16 @@ I2CWrapper* I2CWrapper::sInstanceI2C1 = nullptr;
 I2CWrapper* I2CWrapper::sInstanceI2C2 = nullptr;
 I2CWrapper* I2CWrapper::sInstanceI2C3 = nullptr;
 
+extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
+    I2CWrapper* instance = I2CWrapper::GetInstance(hi2c);
+    if (instance) instance->OnRxComplete();
+}
+
+extern "C" void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
+    I2CWrapper* instance = I2CWrapper::GetInstance(hi2c);
+    if (instance) instance->OnError();
+}
+
 I2CWrapper::I2CWrapper(I2C_HandleTypeDef* hi2c, uint16_t devAddress) :
     mHi2c(hi2c), mDevAddress(devAddress), mMemAddress(0) {
         if (hi2c->Instance == I2C1) sInstanceI2C1 = this;
@@ -58,16 +68,6 @@ void I2CWrapper::SetReadCallback(ReadCallback callback) {
 
 void I2CWrapper::SetErrorCallback(ErrorCallback callback) {
     mErrorCallback = callback;
-}
-
-extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
-    I2CWrapper* instance = I2CWrapper::GetInstance(hi2c);
-    if (instance) instance->OnRxComplete();
-}
-
-extern "C" void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
-    I2CWrapper* instance = I2CWrapper::GetInstance(hi2c);
-    if (instance) instance->OnError();
 }
 
 std::shared_ptr<II2CWrapper> MakeII2CWrapper(I2C_HandleTypeDef* hi2c, uint16_t devAddress) {

@@ -2,6 +2,8 @@
 
 #include "motion_types.h"
 
+#include <cstdint>
+
 struct MotionConfig {
     MotionData posMax;
     MotionData velMax;

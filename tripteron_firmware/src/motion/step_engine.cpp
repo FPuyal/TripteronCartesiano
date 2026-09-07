@@ -5,9 +5,9 @@ void StepEngine::Update() {
     if(mBufferFlag) {
         mBufferFlag = false;
 
-        uint8_t auxIndex = (mBufferIndex < mBufferSize/2) ? mBufferSize/2 : 0;
+        uint8_t auxIndex = (mBufferIndex < kBufferSize/2) ? kBufferSize/2 : 0;
 
-        for(int j = 0; j < mBufferSize/2; j++) {
+        for(int j = 0; j < kBufferSize/2; j++) {
             uint8_t idx = auxIndex + j;
             mBuffer[idx] = 0;
             for (int i = 0; i < 3; i++) {
@@ -41,9 +41,9 @@ void StepEngine::Tick() {
     mZTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x04);
     mZTmc->SetStep(mBuffer[mBufferIndex] & 0x04);
 
-    mBufferIndex = (mBufferIndex + 1) % mBufferSize;
+    mBufferIndex = (mBufferIndex + 1) % kBufferSize;
 
-    if(mBufferIndex == 0 || mBufferIndex == mBufferSize/2)
+    if(mBufferIndex == 0 || mBufferIndex == kBufferSize/2)
         mBufferFlag = true;
 }
 

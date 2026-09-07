@@ -2,6 +2,8 @@
 
 #include "motion_controller_types.h"
 
+#include <cstdint>
+
 static constexpr uint16_t maxSegments = 64;
 
 enum class State {

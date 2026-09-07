@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <memory>
+#include <cstdint>
 
 using ReadCallback  = std::function<void(uint16_t raw_value)>;
 using ErrorCallback = std::function<void(void)>;
