@@ -22,31 +22,34 @@ namespace {
     constexpr float kDegToRad = 0.01745329252f;
 }
 
-void Kinematics::CaptureHome() {
-    if (!mXEncoder->SetOffset()) return;
-    if (!mYEncoder->SetOffset()) return;
-    if (!mZEncoder->SetOffset()) return;
-    HAL_Delay(2);
+bool Kinematics::CaptureHome() {
+    if (!mXEncoder->SetOffset()) return false;
+    if (!mYEncoder->SetOffset()) return false;
+    if (!mZEncoder->SetOffset()) return false;
 
-    CalculateKinematics();
-    mHome.x = mPreviousState.pos.x;
-    mHome.y = mPreviousState.pos.y;
-    mHome.z = mPreviousState.pos.z;
+    if(CalculateKinematics() == KinematicsResult::OK) {
+        mHome.x = mPreviousState.pos.x;
+        mHome.y = mPreviousState.pos.y;
+        mHome.z = mPreviousState.pos.z;
+        return true;
+    }
+    return false;
 }
 
-void Kinematics::Update() {
+
+bool Kinematics::Update() {
     if(mUpdateKinematics) {
         mUpdateKinematics = false;
-        CalculateKinematics();
+        return CalculateKinematics() == KinematicsResult::OK;
     }
+    return true;
 }
 
-void Kinematics::CalculateKinematics() {
-
+KinematicsResult Kinematics::CalculateKinematics() {
     float alphaX = 0.0f, alphaY = 0.0f, alphaZ = 0.0f;
-    if (!mXEncoder->ReadAngle(alphaX)) return;
-    if (!mYEncoder->ReadAngle(alphaY)) return;
-    if (!mZEncoder->ReadAngle(alphaZ)) return;
+
+    if(!mXEncoder->ReadAngle(alphaX) || !mYEncoder->ReadAngle(alphaY) || !mZEncoder->ReadAngle(alphaZ))
+        return KinematicsResult::NoData;
 
     auto lawOfCosines = [&](float a_deg){
         const float a = a_deg * kDegToRad; // deg→rad
@@ -87,7 +90,7 @@ void Kinematics::CalculateKinematics() {
     evalG(lo, gLo, dg);
     evalG(hi, gHi, dg);
     if (gLo * gHi > 0.0f)
-        return; // sin raiz en el bracket -> lecturas de encoder inconsistentes
+        return KinematicsResult::NoSolution; // sin raiz en el bracket -> lecturas de encoder inconsistentes
 
     // Warm start: w del ciclo anterior, saturado al bracket
     float w = mPreviousState.pos.z * mPreviousState.pos.z;
@@ -123,7 +126,7 @@ void Kinematics::CalculateKinematics() {
     }
 
     if(!converged)
-        return;
+        return KinematicsResult::NoSolution;
 
     const float z = sqrtf(fmaxf(w, 0.0f));
 
@@ -139,6 +142,8 @@ void Kinematics::CalculateKinematics() {
     mPreviousState.pos.x = x;
     mPreviousState.pos.y = y;
     mPreviousState.pos.z = z;
+
+    return KinematicsResult::OK;
 }
 
 std::shared_ptr<IKinematics> MakeIKinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder){

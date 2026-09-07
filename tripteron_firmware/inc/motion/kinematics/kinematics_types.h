@@ -6,3 +6,10 @@ struct KinematicState {
     MotionData pos;
     MotionData vel;
 };
+
+enum class KinematicsResult {
+    None = 0,
+    OK,
+    NoData,
+    NoSolution
+};

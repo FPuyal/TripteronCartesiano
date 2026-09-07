@@ -24,7 +24,7 @@ extern "C" volatile uint8_t UsbCdc_RxReady;
 extern "C" void SystemClock_Config(void);
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin);
 
-void HardwareManager::InitHardware() {
+bool HardwareManager::InitHardware() {
     SystemClock_Config();
 
     MX_GPIO_Init();
@@ -82,9 +82,10 @@ void HardwareManager::InitHardware() {
             1
     );
 
-    mTimers[static_cast<size_t>(TimerId::Tim1)]->Stop();
-    mTimers[static_cast<size_t>(TimerId::Tim2)]->Stop();
-    mTimers[static_cast<size_t>(TimerId::Tim3)]->Stop();
+    if(!mTimers[static_cast<size_t>(TimerId::Tim1)]->Start() ||
+        !mTimers[static_cast<size_t>(TimerId::Tim2)]->Start() ||
+        !mTimers[static_cast<size_t>(TimerId::Tim3)]->Start())
+        return false;
 
     mUsbCdc = MakeIUsbCdc();
     usbCdcInstance = mUsbCdc.get();
@@ -93,6 +94,8 @@ void HardwareManager::InitHardware() {
 
     while (!UsbCdc_HostConnected) {}
     while (!UsbCdc_RxReady) {}
+
+    return true;
 }
 
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin) {

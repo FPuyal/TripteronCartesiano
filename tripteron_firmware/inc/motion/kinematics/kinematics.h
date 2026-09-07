@@ -9,13 +9,13 @@ class Kinematics : public IKinematics {
 public:
     Kinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder) :
         mXEncoder(xEncoder), mYEncoder(yEncoder), mZEncoder(zEncoder) {}
-    void CaptureHome() override;
-    void Update() override;
+    bool CaptureHome() override;
+    bool Update() override;
     void RequestUpdate() override { mUpdateKinematics = true; }
     KinematicState GetCurrentState() const override { return mCurrentState; }
 
 private:
-    void CalculateKinematics();
+    KinematicsResult CalculateKinematics();
 
     KinematicState mCurrentState {};
     KinematicState mPreviousState {};

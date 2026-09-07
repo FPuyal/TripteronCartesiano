@@ -76,7 +76,10 @@ void Robot::Run(){
 
             if(!endX && !endY && !endZ) {
                 mMotionController->SetHomePosition();
-                mKinematics->CaptureHome();
+                if(!mKinematics->CaptureHome()) {
+                    mFail = RobotFailure::CaptureHome;
+                    break;
+                }
             }
 
             mElapsedMs = HAL_GetTick() - mBackoffMs;
@@ -99,8 +102,11 @@ void Robot::Run(){
 
         case State::Moving: {
             mMotionController->Move();
-            mMotionController->Update();
-            // mKinematics->Update();
+
+            if(!mKinematics->Update()) {
+                mFail = RobotFailure::KinematicsUpdate;
+                break;
+            }
 
             MotionData steps = mMotionController->GetSteps();
             mStepEngine->SetSteps(steps.x, steps.y, steps.z);
@@ -116,8 +122,15 @@ void Robot::Run(){
             mStepEngine->SetSteps(0, 0, 0);
             mPathSize = 0;
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+
+            if(mStateRequest == StateRequest::Reset)
+                mFail = RobotFailure::None;
+
             break;
     }
+
+    if(mFail != RobotFailure::None)
+        mState = State::Fault;
 
     // Transiciones de estados
     switch (mState) {

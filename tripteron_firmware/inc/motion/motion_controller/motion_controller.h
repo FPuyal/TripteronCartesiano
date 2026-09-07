@@ -13,9 +13,8 @@ public:
     MotionController(MotionConfig motionConfig);
     void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; mVelocity = {0.0f, 0.0f, 0.0f};}
     bool SetSegments(MotionPath path) override;
-    bool Move() override;
+    void Move() override;
     void RequestUpdate() override { mUpdateMotion = true; }
-    bool Update() override;
 
     MotionData GetPosition() override { return mPosition; }
     MotionData GetVelocity() override { return mVelocity; }
@@ -23,6 +22,9 @@ public:
     bool IsFinished() override { return mFinished; }
 
 private:
+    bool UpdateTrajectory();
+    bool UpdateSegment();
+
     static_assert(kMaxSegments <= 255, "mNumSegments/mCurrentSegment son uint8_t");
     std::array<SegmentData, kMaxSegments> mSegments {};
     uint8_t mNumSegments = 0;

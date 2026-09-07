@@ -13,7 +13,9 @@ public:
     void SetStep(bool step) override;
 
 private:
-    void ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress);
+    bool ConfigureRegisters(uint16_t microSteps, uint8_t nodeAddress);
+
+    bool mConfigFailure;
 
     std::shared_ptr<IGpioOutput> mStep;
     std::shared_ptr<IGpioOutput> mDir;

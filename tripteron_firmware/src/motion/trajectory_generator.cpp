@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <vector>
 
 static constexpr float kUpdateDt = 0.001f; // Se define en base a la frecuancia de interrupción del TIM2
 static constexpr float eps = 1e-3f;

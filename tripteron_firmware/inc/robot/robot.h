@@ -47,6 +47,8 @@ private:
     uint8_t mEndByte = 0xFF;
     volatile bool mTelemetryFlag = false;
 
+    volatile RobotFailure mFail = RobotFailure::None;
+
     std::shared_ptr<IMotionController> mMotionController;
     std::shared_ptr<IStepEngine> mStepEngine;
     std::shared_ptr<IGpioInput> mEndStopX;

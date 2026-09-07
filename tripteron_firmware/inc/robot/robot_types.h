@@ -25,3 +25,9 @@ struct CommandRequest {
     MotionData path[kMaxSegments];
     uint16_t pathSize;
 };
+
+enum class RobotFailure {
+    None,
+    CaptureHome,
+    KinematicsUpdate
+};

@@ -9,7 +9,7 @@
 class HardwareManager : public IHardwareManager {
 public:
     HardwareManager() = default;
-    void InitHardware() override;
+    bool InitHardware() override;
     std::shared_ptr<ITimer> GetTimer(TimerId id) override;
     std::shared_ptr<ITmc> GetTmc(TmcId id) override;
     std::shared_ptr<IEncoder> GetEncoder(EncoderId id) override;

@@ -98,7 +98,12 @@ bool MotionController::SetSegments(MotionPath path) {
     return true;
 }
 
-bool MotionController::Move() {
+void MotionController::Move() {
+    UpdateTrajectory();
+    UpdateSegment();
+}
+
+bool MotionController::UpdateTrajectory() {
     if(!mTrajectoryGenerator->IsFinished())
         return true; // segmento en curso, nada que lanzar todavía
 
@@ -124,7 +129,7 @@ bool MotionController::Move() {
         TrajectoryConfig{segment.velMaxSeg, segment.accMaxSeg});
 }
 
-bool MotionController::Update() {
+bool MotionController::UpdateSegment() {
     if(!mUpdateMotion)
         return false;
 

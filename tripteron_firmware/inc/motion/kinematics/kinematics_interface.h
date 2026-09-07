@@ -8,8 +8,8 @@
 class IKinematics {
 public:
     virtual ~IKinematics() = default;
-    virtual void CaptureHome() = 0;
-    virtual void Update() = 0;
+    virtual bool CaptureHome() = 0;
+    virtual bool Update() = 0;
     virtual void RequestUpdate() = 0;
     virtual KinematicState GetCurrentState() const = 0;
 };

@@ -30,7 +30,6 @@ bool Encoder::SetOffset() {
             return false;
     }
 
-    mDataReady = false;
     mHomeRawValue = mRawValue;
     return true;
 }
@@ -47,7 +46,8 @@ bool Encoder::ReadAngle(float& angle) {
             angle -= 360.0f;
     }
 
-    mI2cWrapper->ReadIT();   // siempre relanza, haya o no dato
+    mI2cWrapper->ReadIT();
+
     return ready;
 }
 

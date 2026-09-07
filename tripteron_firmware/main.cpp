@@ -17,7 +17,8 @@ int main(){
 
     auto hardwareManager = MakeIHardwareManager();
 
-    hardwareManager->InitHardware();
+    if(!hardwareManager->InitHardware())
+        while(1) {}
 
     auto comms = MakeIComms(hardwareManager->GetUsbCdc());
 
@@ -44,10 +45,6 @@ int main(){
         comms
     );
     robotInterface = robot.get();
-
-    hardwareManager->GetTimer(TimerId::Tim1)->Start();
-    hardwareManager->GetTimer(TimerId::Tim2)->Start();
-    hardwareManager->GetTimer(TimerId::Tim3)->Start();
 
     while(1){
         robot->Run();
