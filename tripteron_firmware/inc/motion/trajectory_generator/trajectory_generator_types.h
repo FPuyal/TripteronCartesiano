@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 
 struct MotionState {
     float pos;

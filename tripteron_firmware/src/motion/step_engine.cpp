@@ -1,19 +1,26 @@
 #include "step_engine.h"
+#include "stm32f407xx.h"
+
+#include <cstdint>
+#include <cstdlib>
 
 void StepEngine::Update() {
-    // Generar tantos tick como sean necesario para su consumo.
-    if(mBufferFlag) {
-        mBufferFlag = false;
+    NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
+    bool flag = mBufferFlag;
+    mBufferFlag = false;
+    NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
 
+    if(flag) {
         uint8_t auxIndex = (mBufferIndex < kBufferSize/2) ? kBufferSize/2 : 0;
 
         for(int j = 0; j < kBufferSize/2; j++) {
             uint8_t idx = auxIndex + j;
             mBuffer[idx] = 0;
             for (int i = 0; i < 3; i++) {
-                uint8_t dir = mSteps[i] > 0 ? 1 : 0;
+                const int16_t steps = mSteps[i];
+                uint8_t dir = steps > 0 ? 1 : 0;
                 uint8_t step = 0;
-                mAccumulator[i] += abs(mSteps[i]);
+                mAccumulator[i] += abs(steps);
 
                 if(mAccumulator[i] >= mThreshold) {
                     mAccumulator[i] -= mThreshold;

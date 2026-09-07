@@ -4,8 +4,6 @@
 
 #include <cstdint>
 
-static constexpr uint16_t maxSegments = 64;
-
 enum class State {
     Init,
     Homing,
@@ -24,6 +22,6 @@ enum class StateRequest {
 
 struct CommandRequest {
     StateRequest stateRequest;
-    MotionData path[maxSegments];
+    MotionData path[kMaxSegments];
     uint16_t pathSize;
 };

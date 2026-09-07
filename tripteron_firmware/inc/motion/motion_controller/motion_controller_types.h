@@ -4,6 +4,8 @@
 
 #include <cstdint>
 
+inline constexpr uint16_t kMaxSegments = 20;
+
 struct MotionConfig {
     MotionData posMax;
     MotionData velMax;

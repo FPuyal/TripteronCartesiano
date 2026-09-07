@@ -175,7 +175,7 @@ void Robot::Run(){
     }
 }
 
-void Robot::SetCommandRequest(CommandRequest commandRequest) {
+void Robot::SetCommandRequest(const CommandRequest& commandRequest) {
     mStateRequest = commandRequest.stateRequest;
     memcpy(mPath, commandRequest.path, commandRequest.pathSize * sizeof(MotionData));
     mPathSize = commandRequest.pathSize;
@@ -244,9 +244,15 @@ CommandRequest Robot::ParseCommand(uint8_t* command, uint16_t size) {
     request.stateRequest = StateRequest::None;
     request.pathSize = 0;
 
+    uint16_t commandIdx = 0;
+
     uint8_t* character = command;
 
-    switch (*character) {
+    auto getCharacter = [&](uint16_t idx) -> uint8_t {
+        return idx < size ? character[idx] : '\0';
+    };
+
+    switch (getCharacter(commandIdx)) {
         case 'H':
             request.stateRequest = StateRequest::Home;
             break;
@@ -261,13 +267,13 @@ CommandRequest Robot::ParseCommand(uint8_t* command, uint16_t size) {
     }
 
     if(request.stateRequest == StateRequest::Move) {
-        character++;
+        commandIdx++;
 
         uint16_t segmentCount = 0;
 
-        while(*character != '\0' && segmentCount < mMaxSegments) {
-            if(*character == ' ') {
-                character++;
+        while(getCharacter(commandIdx) != '\0' && segmentCount < kMaxSegments) {
+            if(getCharacter(commandIdx) == ' ') {
+                commandIdx++;
                 continue;
             }
 
@@ -276,20 +282,20 @@ CommandRequest Robot::ParseCommand(uint8_t* command, uint16_t size) {
             uint8_t coordCount = 0;
 
             for(auto& value : values) {
-                if(*character == '\0')
+                if(getCharacter(commandIdx) == '\0')
                     break;
 
-                while(*character == ' ')
-                    character++;
+                while(getCharacter(commandIdx) == ' ')
+                    commandIdx++;
 
-                if(*character < '0' || *character > '9') {
+                if(getCharacter(commandIdx) < '0' || getCharacter(commandIdx) > '9') {
                     valid = false;
                     break;
                 }
 
-                while(*character >= '0' && *character <= '9') {
-                    value = value * 10.0f + (*character - '0');
-                    character++;
+                while(getCharacter(commandIdx) >= '0' && getCharacter(commandIdx) <= '9') {
+                    value = value * 10.0f + (getCharacter(commandIdx) - '0');
+                    commandIdx++;
                 }
 
                 coordCount++;

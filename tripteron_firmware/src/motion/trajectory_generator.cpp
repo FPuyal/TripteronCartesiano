@@ -42,7 +42,7 @@ bool TrajectoryGenerator::SetTrajectoryProfile(MotionState init, MotionState fin
 }
 
 bool TrajectoryGenerator::GeneratePhases() {
-    mPhases.clear();
+    mNumPhases = 0;
 
     const float a    = mConfig.accMax;
     const float vmax = mConfig.velMax;
@@ -69,19 +69,19 @@ bool TrajectoryGenerator::GeneratePhases() {
     const float dCruise = d - dAcc - dDec;
 
     if (vc > vi + eps)                                                  // aceleración vi -> vc
-        mPhases.push_back({ +a,   vc, 0.0f, EndCondition::VEL });
+        mPhases[mNumPhases++] = { +a,   vc, 0.0f, EndCondition::VEL };
 
     if (dCruise > eps)                                                  // crucero a vc
-        mPhases.push_back({ 0.0f, vc, dAcc + dCruise, EndCondition::DIST });
+       mPhases[mNumPhases++] = { 0.0f, vc, dAcc + dCruise, EndCondition::DIST };
 
     if (vc > vf + eps)
-        mPhases.push_back({-a, vf, 0.0f, EndCondition::VEL}); // desaceleración vc -> vf
+        mPhases[mNumPhases++] = {-a, vf, 0.0f, EndCondition::VEL}; // desaceleración vc -> vf
 
-    return !mPhases.empty();
+    return mNumPhases != 0;
 }
 
 bool TrajectoryGenerator::Update() {
-    if(mPhases.empty() || mFinished)
+    if(mNumPhases == 0 || mFinished)
         return false;
 
     mPhaseTime += kUpdateDt;
@@ -91,7 +91,7 @@ bool TrajectoryGenerator::Update() {
 
     auto advancePhase = [this]()->void {
         mCurrentPhase++;
-        if(mCurrentPhase >= mPhases.size()) {
+        if(mCurrentPhase >= mNumPhases) {
             mFinished = true;
             mPos = mFinal.pos;
             mVel = mFinal.vel;

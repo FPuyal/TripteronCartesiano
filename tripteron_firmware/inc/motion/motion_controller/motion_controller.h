@@ -5,7 +5,7 @@
 #include "trajectory_generator_interface.h"
 
 #include <array>
-#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 class MotionController : public IMotionController {
@@ -23,7 +23,8 @@ public:
     bool IsFinished() override { return mFinished; }
 
 private:
-    SegmentData* mSegments = nullptr;
+    static_assert(kMaxSegments <= 255, "mNumSegments/mCurrentSegment son uint8_t");
+    std::array<SegmentData, kMaxSegments> mSegments {};
     uint8_t mNumSegments = 0;
     uint8_t mCurrentSegment = 0;
     bool mFinished = true;

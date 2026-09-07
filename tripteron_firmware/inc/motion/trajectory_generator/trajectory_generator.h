@@ -2,6 +2,9 @@
 
 #include "trajectory_generator_interface.h"
 
+#include <array>
+#include <cstdint>
+
 class TrajectoryGenerator : public ITrajectoryGenerator {
 public:
     TrajectoryGenerator() = default;
@@ -16,12 +19,14 @@ public:
 private:
     bool GeneratePhases();
 
-    TrajectoryConfig mConfig;
+    TrajectoryConfig mConfig {};
     MotionState mInit;
     MotionState mFinal;
 
-    std::vector<TrajectoryPhase> mPhases;
-    std::size_t mCurrentPhase = 0;
+    static constexpr uint8_t kMaxPhases = 3;
+    std::array<TrajectoryPhase, kMaxPhases> mPhases {};
+    uint8_t mNumPhases = 0;
+    uint8_t mCurrentPhase = 0;
 
     // Initial phase variables
     float mPhaseTime = 0.0f;
