@@ -11,21 +11,22 @@ Encoder::Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) : mI2cWrapper(i2cWrapp
 
     mI2cWrapper->SetReadCallback([this](uint16_t raw_value) {
         mRawValue = raw_value;
-        mDataReady = true;
+        mTimeMark = 0;
     });
 
     mI2cWrapper->SetErrorCallback([this]() {
-        mDataReady = false;
+
     });
 }
 
 bool Encoder::SetOffset() {
-    mDataReady = false;
+    mTimeMark = 255;
+
     if (!mI2cWrapper->ReadIT())
         return false;
 
     uint32_t start = HAL_GetTick();
-    while (!mDataReady) {
+    while (mTimeMark != 0) {
         if (HAL_GetTick() - start > kOffsetTimeoutMs)
             return false;
     }
@@ -34,21 +35,24 @@ bool Encoder::SetOffset() {
     return true;
 }
 
+bool Encoder::RequestUpdate() {
+    if(mTimeMark < 255)
+        mTimeMark++;
+
+    return mI2cWrapper->ReadIT();
+}
+
 bool Encoder::ReadAngle(float& angle) {
-    bool ready = mDataReady;
+    if(mTimeMark > kTimeMarkThreshold)
+        return false;
 
-    if (ready) {
-        mDataReady = false;
-        int32_t delta = (int32_t)mRawValue - (int32_t)mHomeRawValue;
-        delta = (delta + 4096) % 4096;
-        angle = delta * 360.0f / 4096.0f;
-        if (angle > 180.0f)
-            angle -= 360.0f;
-    }
+    int32_t delta = (int32_t)mRawValue - (int32_t)mHomeRawValue;
+    delta = (delta + 4096) % 4096;
+    angle = delta * 360.0f / 4096.0f;
+    if (angle > 180.0f)
+        angle -= 360.0f;
 
-    mI2cWrapper->ReadIT();
-
-    return ready;
+    return true;
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {

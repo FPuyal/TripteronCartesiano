@@ -9,6 +9,7 @@ class IEncoder {
 public:
     virtual ~IEncoder() = default;
     virtual bool SetOffset() = 0;
+    virtual bool RequestUpdate() = 0;
     virtual bool ReadAngle(float& angle) = 0;
 };
 

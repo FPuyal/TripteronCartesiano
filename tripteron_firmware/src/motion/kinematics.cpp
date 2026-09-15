@@ -38,11 +38,16 @@ bool Kinematics::CaptureHome() {
 
 
 bool Kinematics::Update() {
-    if(mUpdateKinematics) {
-        mUpdateKinematics = false;
-        return CalculateKinematics() == KinematicsResult::OK;
-    }
-    return true;
+    if(!mUpdateKinematics)
+        return true;
+
+    mUpdateKinematics = false;
+
+    mXEncoder->RequestUpdate();
+    mYEncoder->RequestUpdate();
+    mZEncoder->RequestUpdate();
+    
+    return CalculateKinematics() == KinematicsResult::OK;
 }
 
 KinematicsResult Kinematics::CalculateKinematics() {
