@@ -42,6 +42,8 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
 }
 
 void Robot::Run(){
+    const StateRequest stateRequest = mStateRequest;
+
     bool endX = mEndStopX->Read();
     bool endY = mEndStopY->Read();
     bool endZ = mEndStopZ->Read();
@@ -50,7 +52,7 @@ void Robot::Run(){
     switch (mState) {
         case State::Init:
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-            if(mStateRequest == StateRequest::Home)
+            if(stateRequest == StateRequest::Home)
                 mHomingMs = HAL_GetTick();
             break;
 
@@ -91,10 +93,13 @@ void Robot::Run(){
         case State::Idle:
             __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
             HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-            if(mStateRequest == StateRequest::Move)
+            if(stateRequest == StateRequest::Move) {
+                HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
                 segmentFlag = mMotionController->SetSegments({mPath, mPathSize});
+                HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+            }
 
-            if(mStateRequest == StateRequest::Home) {
+            if(stateRequest == StateRequest::Home) {
                 HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
                 mHomingMs = HAL_GetTick();
             }
@@ -123,7 +128,7 @@ void Robot::Run(){
             mPathSize = 0;
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 
-            if(mStateRequest == StateRequest::Reset)
+            if(stateRequest == StateRequest::Reset)
                 mFail = RobotFailure::None;
 
             break;
@@ -135,9 +140,10 @@ void Robot::Run(){
     // Transiciones de estados
     switch (mState) {
         case State::Init:
-            if(mStateRequest == StateRequest::Home){
+            if(stateRequest == StateRequest::Home){
                 mState = State::Homing;
-                mStateRequest = StateRequest::None;
+                if(mStateRequest == stateRequest)
+                    mStateRequest = StateRequest::None;
             }
             break;
 
@@ -158,31 +164,35 @@ void Robot::Run(){
             break;
 
         case State::Idle:
-            if(mStateRequest == StateRequest::Home){
+            if(stateRequest == StateRequest::Home){
                 mState = State::Homing;
-                mStateRequest = StateRequest::None;
+                if(mStateRequest == stateRequest)
+                    mStateRequest = StateRequest::None;
             }
 
-            if(mStateRequest == StateRequest::Move){
+            if(stateRequest == StateRequest::Move){
                 if(segmentFlag)
                     mState = State::Moving;
                 else
                     mState = State::Fault;
-                mStateRequest = StateRequest::None;
+                if(mStateRequest == stateRequest)
+                    mStateRequest = StateRequest::None;
             }
             break;
 
         case State::Moving:
             if(mMotionController->IsFinished()){
                 mState = State::Idle;
-                mStateRequest = StateRequest::None;
+                if(mStateRequest == stateRequest)
+                    mStateRequest = StateRequest::None;
             }
             break;
 
         case State::Fault:
-            if(mStateRequest == StateRequest::Reset){
+            if(stateRequest == StateRequest::Reset){
                 mState = State::Init;
-                mStateRequest = StateRequest::None;
+                if(mStateRequest == stateRequest)
+                    mStateRequest = StateRequest::None;
             }
             break;
     }
