@@ -23,10 +23,10 @@ int main(){
     auto comms = MakeIComms(hardwareManager->GetUsbCdc());
 
     auto stepEngine = MakeIStepEngine(
-        19200,
         hardwareManager->GetTmc(TmcId::XTmc),
         hardwareManager->GetTmc(TmcId::YTmc),
-        hardwareManager->GetTmc(TmcId::ZTmc)
+        hardwareManager->GetTmc(TmcId::ZTmc),
+        19200
     );
     stepEngineInstance = stepEngine.get();
 

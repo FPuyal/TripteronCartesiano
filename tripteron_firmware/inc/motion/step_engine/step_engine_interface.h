@@ -13,8 +13,9 @@ public:
     virtual void SetZSteps(int16_t z) = 0;
     virtual void RequestUpdate() = 0;
     virtual void Update() = 0;
+    virtual void Reset() = 0;
     virtual void Tick() = 0;
 };
 
-std::shared_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc);
+std::shared_ptr<IStepEngine> MakeIStepEngine(std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc, const uint16_t threshold);
 

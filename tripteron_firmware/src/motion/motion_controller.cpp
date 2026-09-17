@@ -103,6 +103,17 @@ void MotionController::Move() {
     UpdateSegment();
 }
 
+void MotionController::Reset() {
+    mTrajectoryGenerator->Reset();
+    mNumSegments = 0;
+    mCurrentSegment = 0;
+    mFinished = true;
+    mPosition = {0.0f, 0.0f, 0.0f};
+    mPathInit = {0.0f, 0.0f, 0.0f};
+    mUpdateMotion = false;
+    mVelocity = {0.0f, 0.0f, 0.0f};
+}
+
 bool MotionController::UpdateTrajectory() {
     if(!mTrajectoryGenerator->IsFinished())
         return true; // segmento en curso, nada que lanzar todavía

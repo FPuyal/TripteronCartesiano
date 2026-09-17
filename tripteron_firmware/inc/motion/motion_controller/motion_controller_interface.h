@@ -10,6 +10,7 @@ public:
     virtual void SetHomePosition() = 0; // referencia real tras homing: pos y vel de partida para SetSegments()
     virtual bool SetSegments(MotionPath path) = 0;
     virtual void Move() = 0;
+    virtual void Reset() = 0;
     virtual void RequestUpdate() = 0;
 
     virtual MotionData GetPosition() = 0;

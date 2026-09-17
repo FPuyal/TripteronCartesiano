@@ -5,8 +5,8 @@
 
 class StepEngine : public IStepEngine {
 public:
-    StepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) :
-        mThreshold(threshold), mXTmc(xTmc), mYTmc(yTmc), mZTmc(zTmc) {}
+    StepEngine(std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc, const uint16_t threshold) :
+        mXTmc(xTmc), mYTmc(yTmc), mZTmc(zTmc), mThreshold(threshold) {}
     ~StepEngine() override = default;
 
     void SetSteps(int16_t x, int16_t y, int16_t z) override { mSteps[0] = x; mSteps[1] = y; mSteps[2] = z; };
@@ -15,6 +15,7 @@ public:
     void SetZSteps(int16_t z) override { mSteps[2] = z; }
     void RequestUpdate() override { mBufferFlag = true; }
     void Update() override;
+    void Reset() override;
     void Tick() override;
 
 private:

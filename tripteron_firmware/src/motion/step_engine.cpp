@@ -39,6 +39,24 @@ void StepEngine::Update() {
     }
 }
 
+void StepEngine::Reset() {
+    NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
+
+    for(int i = 0; i < 3; i++) {
+        mSteps[i] = 0;
+        mAccumulator[i] = 0;
+        mPrevDir[i] = 0;
+    }
+
+    for(int i = 0; i < kBufferSize; i++)
+        mBuffer[i] = 0;
+
+    mBufferIndex = 0;
+    mBufferFlag = false;
+
+    NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+}
+
 void StepEngine::Tick() {
     // Prueba para el TMCX
     mXTmc->SetDir(mBuffer[mBufferIndex] >> 3 & 0x01);
@@ -54,6 +72,6 @@ void StepEngine::Tick() {
         mBufferFlag = true;
 }
 
-std::shared_ptr<IStepEngine> MakeIStepEngine(const uint16_t threshold, std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc) {
-    return std::make_shared<StepEngine>(threshold, xTmc, yTmc, zTmc);
+std::shared_ptr<IStepEngine> MakeIStepEngine(std::shared_ptr<ITmc> xTmc, std::shared_ptr<ITmc> yTmc, std::shared_ptr<ITmc> zTmc, const uint16_t threshold) {
+    return std::make_shared<StepEngine>(xTmc, yTmc, zTmc, threshold);
 }

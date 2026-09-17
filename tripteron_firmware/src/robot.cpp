@@ -30,8 +30,8 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
     mMotionController = MakeIMotionController(
         MotionConfig{
             {200.0f, 200.0f, 200.0f},
+            {240.0f, 240.0f, 48.0f},
             {480.0f, 480.0f, 96.0f},
-            {960.0f, 960.0f, 192.0f},
             0.2f,
             {20.0f, 20.0f, 25.0f}});
     motionControllerInstance = mMotionController.get();
@@ -128,9 +128,11 @@ void Robot::Run(){
             mPathSize = 0;
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 
-            if(stateRequest == StateRequest::Reset)
+            if(stateRequest == StateRequest::Reset) {
                 mFail = RobotFailure::None;
-
+                mStepEngine->Reset();
+                mMotionController->Reset();
+            }
             break;
     }
 

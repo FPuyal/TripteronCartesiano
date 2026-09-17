@@ -36,7 +36,6 @@ bool Kinematics::CaptureHome() {
     return false;
 }
 
-
 bool Kinematics::Update() {
     if(!mUpdateKinematics)
         return true;
@@ -46,7 +45,7 @@ bool Kinematics::Update() {
     mXEncoder->RequestUpdate();
     mYEncoder->RequestUpdate();
     mZEncoder->RequestUpdate();
-    
+
     return CalculateKinematics() == KinematicsResult::OK;
 }
 
@@ -96,7 +95,6 @@ KinematicsResult Kinematics::CalculateKinematics() {
     evalG(hi, gHi, dg);
     if (gLo * gHi > 0.0f)
         return KinematicsResult::NoSolution; // sin raiz en el bracket -> lecturas de encoder inconsistentes
-
     // Warm start: w del ciclo anterior, saturado al bracket
     float w = mPreviousState.pos.z * mPreviousState.pos.z;
     if (w < lo) w = lo;

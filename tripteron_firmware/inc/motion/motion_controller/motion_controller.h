@@ -14,6 +14,7 @@ public:
     void SetHomePosition() override { mPosition = {0.0f, 0.0f, 0.0f}; mVelocity = {0.0f, 0.0f, 0.0f};}
     bool SetSegments(MotionPath path) override;
     void Move() override;
+    void Reset() override;
     void RequestUpdate() override { mUpdateMotion = true; }
 
     MotionData GetPosition() override { return mPosition; }
