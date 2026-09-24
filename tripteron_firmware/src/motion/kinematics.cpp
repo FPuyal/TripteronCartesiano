@@ -4,16 +4,17 @@
 
 namespace {
     constexpr float kDist   = 180.0f;    // Longitud del brazo en mm
-    constexpr float kGammaX = 76.9044f;  // Offset de alphaX en º
-    constexpr float kGammaY = 77.7114f;
-    constexpr float kGammaZ = 22.5280f;
-    constexpr float kLY     = 261.6f;
-    constexpr float kLX     = 263.6f;
-    constexpr float kDX     = 85.7f;
-    constexpr float kDY     = 35.5f;
-    constexpr float kL1     = 40.0f;
-    constexpr float kL2     = 40.0f;
-    constexpr float kL3     = 25.0f;
+    constexpr float kGammaX = 76.391f;
+    constexpr float kGammaY = 76.391f;
+    constexpr float kGammaZ = 23.534f;
+    constexpr float kLY     = 260.600f;
+    constexpr float kLX     = 260.600f;
+    constexpr float kDZ     = 32.900f;
+    constexpr float kDX     = 88.700f;
+    constexpr float kDY     = 36.500f;
+    constexpr float kL1     = 40.000f;
+    constexpr float kL2     = 40.000f;
+    constexpr float kL3     = 25.000f;
 
     constexpr int   kMaxIterations = 8;
     constexpr float kFkTol         = 0.01f;
