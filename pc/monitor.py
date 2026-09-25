@@ -20,10 +20,14 @@ Ejemplo:
 
 import datetime
 import os
+import re
 import sys
 import threading
 import time
 
+import matplotlib
+matplotlib.use('Agg')  # Sin ventana: se guarda a PNG desde el hilo receptor.
+import matplotlib.pyplot as plt
 import serial
 
 PORT = 'COM6'
@@ -34,8 +38,14 @@ RETRY_DELAY_S = 0.5
 
 VALID_COMMAND_IDS = {'H', 'R', 'M'}
 
+SAMPLE_PERIOD_S = 0.020
+FRAME_TAGS = ('MC', 'KM')
+NUMBER_RE = r'\s*([+-]\d+,\d+)'
+FRAME_RE = {tag: re.compile(r'\[' + tag + r'\]' + NUMBER_RE * 6) for tag in FRAME_TAGS}
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGS_DIR = os.path.join(SCRIPT_DIR, 'logs')
+GRAPHICS_DIR = os.path.join(SCRIPT_DIR, 'graphics')
 
 
 def make_log_path():
@@ -67,6 +77,47 @@ def build_command(args):
     return message.encode('ascii') + b'\0'
 
 
+def parse_log(text):
+    """Devuelve {tag: [[x, y, z, vx, vy, vz], ...]} con una fila por muestra."""
+    samples = {tag: [] for tag in FRAME_TAGS}
+    for tag, regex in FRAME_RE.items():
+        for match in regex.finditer(text):
+            samples[tag].append([float(v.replace(',', '.')) for v in match.groups()])
+    return samples
+
+
+def plot_log(log_path):
+    """Genera log-<fecha>-MC.png y log-<fecha>-KM.png en pc/graphics/."""
+    with open(log_path, 'r', encoding='ascii', errors='ignore') as f:
+        samples = parse_log(f.read())
+
+    os.makedirs(GRAPHICS_DIR, exist_ok=True)
+    base = os.path.join(GRAPHICS_DIR, os.path.splitext(os.path.basename(log_path))[0])
+    for tag, rows in samples.items():
+        if not rows:
+            continue
+        t = [i * SAMPLE_PERIOD_S for i in range(len(rows))]
+        cols = list(zip(*rows))
+
+        fig, (ax_pos, ax_vel) = plt.subplots(2, 1, sharex=True, figsize=(10, 7))
+        fig.suptitle(f'[{tag}] {os.path.basename(log_path)}')
+        for i, (axis, color) in enumerate(zip('XYZ', ('tab:red', 'tab:green', 'tab:blue'))):
+            ax_pos.plot(t, cols[i], color=color, label=f'Pos {axis}')
+            ax_vel.plot(t, cols[i + 3], color=color, label=f'Vel {axis}')
+        ax_pos.set_ylabel('Posicion')
+        ax_vel.set_ylabel('Velocidad')
+        ax_vel.set_xlabel('Tiempo (s)')
+        for ax in (ax_pos, ax_vel):
+            ax.grid(True)
+            ax.legend(loc='upper right')
+        fig.tight_layout()
+
+        png_path = f'{base}-{tag}.png'
+        fig.savefig(png_path, dpi=120)
+        plt.close(fig)
+        print(f'Grafico -> {png_path}')
+
+
 def receiver_loop(ser, stop_event):
     """Escucha el puerto y vuelca cada mensaje (hasta 0xFF) a un log."""
     buffer = bytearray()
@@ -84,7 +135,12 @@ def receiver_loop(ser, stop_event):
                 data = bytes(buffer).replace(b'[MC', b'\r\n[MC').lstrip(b'\r\n')
                 with open(log_path, 'wb') as f:
                     f.write(data)
-                print(f'\n{len(buffer)} bytes -> {log_path}\n> ', end='', flush=True)
+                print(f'\n{len(buffer)} bytes -> {log_path}')
+                try:
+                    plot_log(log_path)
+                except Exception as exc:
+                    print(f'Error al graficar: {exc}')
+                print('> ', end='', flush=True)
                 buffer.clear()
             else:
                 buffer.append(byte)
