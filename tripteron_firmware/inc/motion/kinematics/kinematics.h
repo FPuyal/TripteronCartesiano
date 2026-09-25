@@ -4,6 +4,7 @@
 #include "kinematics_types.h"
 #include "motion_controller_types.h"
 #include <memory>
+#include <array>
 
 class Kinematics : public IKinematics {
 public:
@@ -18,8 +19,10 @@ private:
     KinematicsResult CalculateKinematics();
 
     KinematicState mCurrentState {};
-    KinematicState mPreviousState {};
     MotionData mHome = {};
+
+    static constexpr uint32_t kVelTimeLapse = 50;
+    std::array<MotionData, kVelTimeLapse> mPreviousPositions{};
 
     std::shared_ptr<IEncoder> mXEncoder;
     std::shared_ptr<IEncoder> mYEncoder;

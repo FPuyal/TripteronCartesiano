@@ -1,5 +1,6 @@
 #include "kinematics.h"
 #include "kinematics_types.h"
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -17,7 +18,7 @@ namespace {
     constexpr float kL3     = 25.000f;
 
     constexpr int   kMaxIterations = 8;
-    constexpr float kFkTol         = 0.01f;
+    constexpr float kFkTol         = 1.0f;
     constexpr float kTimeStep      = 0.001f;
 
     constexpr float kDegToRad = 0.01745329252f;
@@ -29,9 +30,8 @@ bool Kinematics::CaptureHome() {
     if (!mZEncoder->SetOffset()) return false;
 
     if(CalculateKinematics() == KinematicsResult::OK) {
-        mHome.x = mPreviousState.pos.x;
-        mHome.y = mPreviousState.pos.y;
-        mHome.z = mPreviousState.pos.z;
+        mHome = mPreviousPositions[0];
+        mPreviousPositions.fill(mHome);
         return true;
     }
     return false;
@@ -97,7 +97,7 @@ KinematicsResult Kinematics::CalculateKinematics() {
     if (gLo * gHi > 0.0f)
         return KinematicsResult::NoSolution; // sin raiz en el bracket -> lecturas de encoder inconsistentes
     // Warm start: w del ciclo anterior, saturado al bracket
-    float w = mPreviousState.pos.z * mPreviousState.pos.z;
+    float w = mPreviousPositions[0].z * mPreviousPositions[0].z;
     if (w < lo) w = lo;
     if (w > hi) w = hi;
 
@@ -138,14 +138,14 @@ KinematicsResult Kinematics::CalculateKinematics() {
     mCurrentState.pos.x = x - mHome.x;
     mCurrentState.pos.y = y - mHome.y;
     mCurrentState.pos.z = z - mHome.z;
-    mCurrentState.vel.x = (x - mPreviousState.pos.x) / kTimeStep;
-    mCurrentState.vel.y = (y - mPreviousState.pos.y) / kTimeStep;
-    mCurrentState.vel.z = (z - mPreviousState.pos.z) / kTimeStep;
 
-    // semilla Newton: pose CRUDA
-    mPreviousState.pos.x = x;
-    mPreviousState.pos.y = y;
-    mPreviousState.pos.z = z;
+    const MotionData oldPos = mPreviousPositions.back();
+    std::copy_backward(mPreviousPositions.begin(), mPreviousPositions.end() - 1, mPreviousPositions.end());
+    mPreviousPositions[0] = {x, y, z};
+
+    mCurrentState.vel.x = (x - oldPos.x) / (kVelTimeLapse * kTimeStep);
+    mCurrentState.vel.y = (y - oldPos.y) / (kVelTimeLapse * kTimeStep);
+    mCurrentState.vel.z = (z - oldPos.z) / (kVelTimeLapse * kTimeStep);
 
     return KinematicsResult::OK;
 }
