@@ -6,6 +6,7 @@ class I2CWrapper : public II2CWrapper {
 public:
     I2CWrapper(I2C_HandleTypeDef* hi2c, uint16_t devAddress);
     bool ReadIT() override;
+    bool WriteRegister(uint8_t reg, uint8_t value) override;
     void OnRxComplete() override;
     void OnError() override;
     void SetMemAddress(uint8_t addr) override;

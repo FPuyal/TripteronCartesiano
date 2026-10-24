@@ -7,7 +7,7 @@
 static constexpr uint8_t kAS5600RawAngle = 0x0C;
 
 Encoder::Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) : mI2cWrapper(i2cWrapper) {
-    mI2cWrapper->SetMemAddress(kAS5600RawAngle);
+    ConfigEncoder();
 
     mI2cWrapper->SetReadCallback([this](uint16_t raw_value) {
         mRawValue = raw_value;
@@ -60,6 +60,11 @@ void Encoder::Reset() {
     mDataReady = false;
     mRawValue = 0;
     mHomeRawValue = 0;
+}
+
+void Encoder::ConfigEncoder() {
+    mI2cWrapper->SetMemAddress(kAS5600RawAngle);
+    mConfigured = mI2cWrapper->WriteRegister(0x07, 0x02);
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {

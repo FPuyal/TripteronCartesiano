@@ -12,6 +12,10 @@ public:
     void Reset() override;
 
 private:
+    void ConfigEncoder();
+
+    bool mConfigured = false; // Indica si el encoder ha sido configurado correctamente
+
     static constexpr uint32_t kOffsetTimeoutMs = 50;
 
     volatile bool mReadPending = false;

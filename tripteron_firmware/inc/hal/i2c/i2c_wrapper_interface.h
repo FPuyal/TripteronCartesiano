@@ -13,6 +13,7 @@ class II2CWrapper {
 public:
     virtual ~II2CWrapper() = default;
     virtual bool ReadIT() = 0;
+    virtual bool WriteRegister(uint8_t reg, uint8_t value) = 0;
     virtual void OnRxComplete() = 0;
     virtual void OnError() = 0;
     virtual void SetMemAddress(uint8_t addr) = 0;
