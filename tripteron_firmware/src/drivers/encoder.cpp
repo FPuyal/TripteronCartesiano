@@ -11,7 +11,8 @@ Encoder::Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) : mI2cWrapper(i2cWrapp
 
     mI2cWrapper->SetReadCallback([this](uint16_t raw_value) {
         mRawValue = raw_value;
-        mTimeMark = 0;
+        mReadPending = false;
+        mDataReady = true;
     });
 
     mI2cWrapper->SetErrorCallback([this]() {
@@ -20,13 +21,12 @@ Encoder::Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) : mI2cWrapper(i2cWrapp
 }
 
 bool Encoder::SetOffset() {
-    mTimeMark = 255;
-
+    mDataReady = false;
     if (!mI2cWrapper->ReadIT())
         return false;
 
     uint32_t start = HAL_GetTick();
-    while (mTimeMark != 0) {
+    while (!mDataReady) {
         if (HAL_GetTick() - start > kOffsetTimeoutMs)
             return false;
     }
@@ -36,23 +36,30 @@ bool Encoder::SetOffset() {
 }
 
 bool Encoder::RequestUpdate() {
-    if(mTimeMark < 255)
-        mTimeMark++;
+    if(mReadPending)
+        return false; // Error. mReadPending debe ser false al solicitar una nueva lectura. Esto indica que la lectura anterior no se completó.
 
-    return mI2cWrapper->ReadIT();
+    mReadPending = mI2cWrapper->ReadIT();
+    return mReadPending; // Devuelve true si la solicitud de lectura se inició correctamente, false si hubo un error.
 }
 
 bool Encoder::ReadAngle(float& angle) {
-    if(mTimeMark > kTimeMarkThreshold)
-        return false;
-
     int32_t delta = (int32_t)mRawValue - (int32_t)mHomeRawValue;
     delta = (delta + 4096) % 4096;
     angle = delta * 360.0f / 4096.0f;
     if (angle > 180.0f)
         angle -= 360.0f;
 
+    mDataReady = false;
+
     return true;
+}
+
+void Encoder::Reset() {
+    mReadPending = false;
+    mDataReady = false;
+    mRawValue = 0;
+    mHomeRawValue = 0;
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {

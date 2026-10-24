@@ -11,6 +11,9 @@ public:
     virtual bool CaptureHome() = 0;
     virtual bool Update() = 0;
     virtual void RequestUpdate() = 0;
+    virtual void Enable(bool enabled) = 0;
+    virtual void Reset() = 0;
+
     virtual KinematicState GetCurrentState() const = 0;
 };
 

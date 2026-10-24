@@ -37,17 +37,37 @@ bool Kinematics::CaptureHome() {
     return false;
 }
 
+void Kinematics::RequestUpdate() {
+    if(!mEnabled)
+        return; // Cinemática deshabilitada, no se actualiza.
+
+    if(!mXEncoder->RequestUpdate() || !mYEncoder->RequestUpdate() || !mZEncoder->RequestUpdate())
+        mError = true; // La lectura no se pudo iniciar o ha fallado la útlima lectura realizada.
+}
+
 bool Kinematics::Update() {
-    if(!mUpdateKinematics)
-        return true;
+    // Tal vez esto sea redundnate.
+    if(!mEnabled)
+        return true; // Cinemática deshabilitada, no se actualiza.
 
-    mUpdateKinematics = false;
+    if(mError)
+        return false; // Error en la lectura de los encoders. No se puede actualizar la cinemática.
 
-    mXEncoder->RequestUpdate();
-    mYEncoder->RequestUpdate();
-    mZEncoder->RequestUpdate();
+    if(!mXEncoder->IsDataReady() || !mYEncoder->IsDataReady() || !mZEncoder->IsDataReady())
+        return true; // No hay datos nuevos de los encoders. No se puede actualizar la cinemática.
 
     return CalculateKinematics() == KinematicsResult::OK;
+}
+
+void Kinematics::Reset() {
+    mError = false;
+    mCurrentState = {};
+    mHome = {};
+    mPreviousPositions.fill({});
+
+    mXEncoder->Reset();
+    mYEncoder->Reset();
+    mZEncoder->Reset();
 }
 
 KinematicsResult Kinematics::CalculateKinematics() {

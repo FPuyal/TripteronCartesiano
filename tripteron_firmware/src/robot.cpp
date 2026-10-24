@@ -29,9 +29,9 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
         mComms(comms) {
     mMotionController = MakeIMotionController(
         MotionConfig{
-            {200.0f, 200.0f, 200.0f},
-            {240.0f, 240.0f, 48.0f},
-            {480.0f, 480.0f, 96.0f},
+            {165.0f, 165.0f, 200.0f},
+            {400.0f, 400.0f, 80.0f},
+            {800.0f, 800.0f, 160.0f},
             0.2f,
             {20.0f, 20.0f, 25.0f}});
     motionControllerInstance = mMotionController.get();
@@ -48,6 +48,11 @@ void Robot::Run(){
     bool endY = mEndStopY->Read();
     bool endZ = mEndStopZ->Read();
     bool segmentFlag = false;
+
+    bool kinematicsError = !mKinematics->Update();
+    if(kinematicsError)
+        mFail = RobotFailure::KinematicsUpdate;
+
     // Lógica de cada estado
     switch (mState) {
         case State::Init:
@@ -91,6 +96,11 @@ void Robot::Run(){
             break;
 
         case State::Idle:
+            if(kinematicsError)
+                break;
+
+            mKinematics->Enable(true);
+
             __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
             HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
             if(stateRequest == StateRequest::Move) {
@@ -100,18 +110,17 @@ void Robot::Run(){
             }
 
             if(stateRequest == StateRequest::Home) {
+                mKinematics->Enable(false);
                 HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
                 mHomingMs = HAL_GetTick();
             }
             break;
 
         case State::Moving: {
-            mMotionController->Move();
-
-            if(!mKinematics->Update()) {
-                mFail = RobotFailure::KinematicsUpdate;
+            if(kinematicsError)
                 break;
-            }
+
+            mMotionController->Move();
 
             MotionData steps = mMotionController->GetSteps();
             mStepEngine->SetSteps(steps.x, steps.y, steps.z);
@@ -124,6 +133,7 @@ void Robot::Run(){
         }
 
         case State::Fault:
+            mKinematics->Enable(false);
             mStepEngine->SetSteps(0, 0, 0);
             mPathSize = 0;
             HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
@@ -132,6 +142,7 @@ void Robot::Run(){
                 mFail = RobotFailure::None;
                 mStepEngine->Reset();
                 mMotionController->Reset();
+                mKinematics->Reset();
             }
             break;
     }

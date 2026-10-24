@@ -11,8 +11,11 @@ public:
     Kinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder) :
         mXEncoder(xEncoder), mYEncoder(yEncoder), mZEncoder(zEncoder) {}
     bool CaptureHome() override;
+    void RequestUpdate() override;
     bool Update() override;
-    void RequestUpdate() override { mUpdateKinematics = true; }
+    void Enable(bool enabled) override { mEnabled = enabled; };
+    void Reset() override;
+
     KinematicState GetCurrentState() const override { return mCurrentState; }
 
 private:
@@ -21,14 +24,15 @@ private:
     KinematicState mCurrentState {};
     MotionData mHome = {};
 
-    static constexpr uint32_t kVelTimeLapse = 50;
+    static constexpr uint32_t kVelTimeLapse = 20;
     std::array<MotionData, kVelTimeLapse> mPreviousPositions{};
 
     std::shared_ptr<IEncoder> mXEncoder;
     std::shared_ptr<IEncoder> mYEncoder;
     std::shared_ptr<IEncoder> mZEncoder;
 
-    volatile bool mUpdateKinematics = false;
+    volatile bool mError = false;
+    volatile bool mEnabled = false;
 };
 
 // Observador Luenberger para estimar posición, velocidad y aceleración de cada eje del robot.
