@@ -1,5 +1,6 @@
 #include "motion_controller.h"
 #include "motion_controller_types.h"
+#include "stm32f407xx.h"
 
 #include <algorithm>
 #include <cmath>
@@ -95,12 +96,23 @@ bool MotionController::SetSegments(MotionPath path) {
         initVel = segment.finalVel;
     }
 
+    NVIC_DisableIRQ(TIM2_IRQn);
+    mTicksPending = 0;
+    NVIC_EnableIRQ(TIM2_IRQn);
+
     return true;
 }
 
 void MotionController::Move() {
-    UpdateTrajectory();
-    UpdateSegment();
+    NVIC_DisableIRQ(TIM2_IRQn);
+    const uint8_t pending = mTicksPending;
+    mTicksPending = 0;
+    NVIC_EnableIRQ(TIM2_IRQn);
+
+    for(uint8_t i = 0; i < pending; i++) {
+        UpdateTrajectory();
+        UpdateSegment();
+    }
 }
 
 void MotionController::Reset() {
@@ -110,7 +122,7 @@ void MotionController::Reset() {
     mFinished = true;
     mPosition = {0.0f, 0.0f, 0.0f};
     mPathInit = {0.0f, 0.0f, 0.0f};
-    mUpdateMotion = false;
+    mTicksPending = 0;
     mVelocity = {0.0f, 0.0f, 0.0f};
 }
 
@@ -141,11 +153,6 @@ bool MotionController::UpdateTrajectory() {
 }
 
 bool MotionController::UpdateSegment() {
-    if(!mUpdateMotion)
-        return false;
-
-    mUpdateMotion = false;
-
     if (!mTrajectoryGenerator->Update())
         return false;
 

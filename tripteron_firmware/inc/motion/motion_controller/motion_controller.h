@@ -15,7 +15,7 @@ public:
     bool SetSegments(MotionPath path) override;
     void Move() override;
     void Reset() override;
-    void RequestUpdate() override { mUpdateMotion = true; }
+    void RequestUpdate() override { mTicksPending = mTicksPending + (mFinished ? 0 : 1); }
 
     MotionData GetPosition() override { return mPosition; }
     MotionData GetVelocity() override { return mVelocity; }
@@ -40,7 +40,7 @@ private:
     // Límites mecánicos y conversión por eje (fijos, mecánica del robot)
     const MotionConfig mMotionConfig = {};
 
-    volatile bool mUpdateMotion = false; // bandera de actualización de movimiento
+    volatile uint8_t mTicksPending = 0; // bandera de actualización de movimiento
 
     std::unique_ptr<ITrajectoryGenerator> mTrajectoryGenerator; // perfil maestro del segmento (distancia total)
 };
