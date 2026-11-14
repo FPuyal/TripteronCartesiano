@@ -11,27 +11,27 @@
 #include "stm32f4xx_hal_gpio.h"
 
 // Resource interfaces includes
-#include "timer_interface.h"
 #include "gpio_output_interface.h"
 #include "uart_interface.h"
-#include "tmc_interface.h"
-#include "gpio_input_interface.h"
-#include "usb_cdc_interface.h"
+#include "hardware_manager_types.h"
 
 #include <memory>
 
 extern IUsbCdc* usbCdcInstance;
+extern "C" volatile uint8_t UsbCdc_HostConnected;
+extern "C" volatile uint8_t UsbCdc_RxReady;
 
 extern "C" void SystemClock_Config(void);
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin);
 
-void HardwareManager::InitHardware() {
+bool HardwareManager::InitHardware() {
     SystemClock_Config();
 
     MX_GPIO_Init();
 
     MX_TIM1_Init();
     MX_TIM2_Init();
+    MX_TIM3_Init();
 
     I2C_BusRecovery(GPIOB, GPIO_PIN_8, GPIOB, GPIO_PIN_9);
     I2C_BusRecovery(GPIOB, GPIO_PIN_10, GPIOB, GPIO_PIN_3);
@@ -45,18 +45,19 @@ void HardwareManager::InitHardware() {
 
     HAL_Delay(500);
 
-    mTimers[TimerId::Tim1] = MakeITimer(&htim1);
-    mTimers[TimerId::Tim2] = MakeITimer(&htim2);
+    mTimers[static_cast<size_t>(TimerId::Tim1)] = MakeITimer(&htim1);
+    mTimers[static_cast<size_t>(TimerId::Tim2)] = MakeITimer(&htim2);
+    mTimers[static_cast<size_t>(TimerId::Tim3)] = MakeITimer(&htim3);
 
-    mEncoders[EncoderId::XEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c1, 0x6C));
-    mEncoders[EncoderId::YEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c2, 0x6C));
-    mEncoders[EncoderId::ZEncoder] = MakeIEncoder(MakeII2CWrapper(&hi2c3, 0x6C));
+    mEncoders[static_cast<size_t>(EncoderId::XEncoder)] = MakeIEncoder(MakeII2CWrapper(&hi2c1, 0x6C));
+    mEncoders[static_cast<size_t>(EncoderId::YEncoder)] = MakeIEncoder(MakeII2CWrapper(&hi2c2, 0x6C));
+    mEncoders[static_cast<size_t>(EncoderId::ZEncoder)] = MakeIEncoder(MakeII2CWrapper(&hi2c3, 0x6C));
 
-    mEndStops[EndStopId::XEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_13);
-    mEndStops[EndStopId::YEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_14);
-    mEndStops[EndStopId::ZEnd] = MakeIGpioInput(GPIOC, GPIO_PIN_15);
+    mEndStops[static_cast<size_t>(EndStopId::XEnd)] = MakeIGpioInput(GPIOC, GPIO_PIN_13);
+    mEndStops[static_cast<size_t>(EndStopId::YEnd)] = MakeIGpioInput(GPIOC, GPIO_PIN_14);
+    mEndStops[static_cast<size_t>(EndStopId::ZEnd)] = MakeIGpioInput(GPIOC, GPIO_PIN_15);
 
-    mTmcs[TmcId::XTmc] = MakeITmc(
+    mTmcs[static_cast<size_t>(TmcId::XTmc)] = MakeITmc(
             MakeIGpioOutput(GPIOE, GPIO_PIN_6),
             MakeIGpioOutput(GPIOE, GPIO_PIN_5),
             MakeIGpioOutput(GPIOE, GPIO_PIN_4),
@@ -64,7 +65,7 @@ void HardwareManager::InitHardware() {
             0x03,
             4
     );
-    mTmcs[TmcId::YTmc] = MakeITmc(
+    mTmcs[static_cast<size_t>(TmcId::YTmc)] = MakeITmc(
             MakeIGpioOutput(GPIOB, GPIO_PIN_6),
             MakeIGpioOutput(GPIOB, GPIO_PIN_5),
             MakeIGpioOutput(GPIOB, GPIO_PIN_4),
@@ -72,7 +73,7 @@ void HardwareManager::InitHardware() {
             0x02,
             4
     );
-    mTmcs[TmcId::ZTmc] = MakeITmc(
+    mTmcs[static_cast<size_t>(TmcId::ZTmc)] = MakeITmc(
             MakeIGpioOutput(GPIOD, GPIO_PIN_6),
             MakeIGpioOutput(GPIOD, GPIO_PIN_5),
             MakeIGpioOutput(GPIOD, GPIO_PIN_4),
@@ -81,13 +82,20 @@ void HardwareManager::InitHardware() {
             1
     );
 
-    mTimers[TimerId::Tim1]->Stop();
-    mTimers[TimerId::Tim2]->Stop();
+    if(!mTimers[static_cast<size_t>(TimerId::Tim1)]->Start() ||
+        !mTimers[static_cast<size_t>(TimerId::Tim2)]->Start() ||
+        !mTimers[static_cast<size_t>(TimerId::Tim3)]->Start())
+        return false;
 
     mUsbCdc = MakeIUsbCdc();
     usbCdcInstance = mUsbCdc.get();
 
     MX_USB_DEVICE_Init();
+
+    while (!UsbCdc_HostConnected) {}
+    while (!UsbCdc_RxReady) {}
+
+    return true;
 }
 
 static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef* sdaPort, uint16_t sdaPin) {
@@ -120,19 +128,19 @@ static void I2C_BusRecovery(GPIO_TypeDef* sclPort, uint16_t sclPin, GPIO_TypeDef
 }
 
 std::shared_ptr<ITimer> HardwareManager::GetTimer(TimerId id) {
-    return mTimers[id];
+    return mTimers.at(static_cast<size_t>(id));
 }
 
 std::shared_ptr<ITmc> HardwareManager::GetTmc(TmcId id) {
-    return mTmcs[id];
+    return mTmcs.at(static_cast<size_t>(id));
 }
 
 std::shared_ptr<IEncoder> HardwareManager::GetEncoder(EncoderId id) {
-    return mEncoders[id];
+    return mEncoders.at(static_cast<size_t>(id));
 }
 
 std::shared_ptr<IGpioInput> HardwareManager::GetEndStop(EndStopId id) {
-    return mEndStops[id];
+    return mEndStops.at(static_cast<size_t>(id));
 }
 
 std::shared_ptr<IUsbCdc> HardwareManager::GetUsbCdc() {

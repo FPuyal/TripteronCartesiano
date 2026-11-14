@@ -12,10 +12,10 @@ public:
 private:
     void OnBytesReceived(uint8_t* data, uint16_t len);
 
-    static constexpr uint16_t mMaxRawCommandLength = 256;
+    static constexpr uint16_t kMaxRawCommandLength = 256;
 
-    uint8_t mRawCommand[mMaxRawCommandLength];
-    uint8_t mRawCommandLength = 0;
+    uint8_t mRawCommand[kMaxRawCommandLength] {};
+    uint16_t mRawCommandLength = 0;
     bool mCommandFinish = false;
 
     CommandCallback mCommandCallback;

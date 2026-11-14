@@ -1,8 +1,8 @@
 #pragma once
 
-#include "motion_controller_utils.h"
+#include "motion_controller_types.h"
 
-static constexpr uint16_t maxSegments = 64;
+#include <cstdint>
 
 enum class State {
     Init,
@@ -22,6 +22,12 @@ enum class StateRequest {
 
 struct CommandRequest {
     StateRequest stateRequest;
-    MotionData path[maxSegments];
+    MotionData path[kMaxSegments];
     uint16_t pathSize;
+};
+
+enum class RobotFailure {
+    None,
+    CaptureHome,
+    KinematicsUpdate
 };

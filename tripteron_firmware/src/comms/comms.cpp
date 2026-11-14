@@ -1,7 +1,6 @@
 #include "comms.h"
 
 #include <cstring>
-#include <ranges>
 
 Comms::Comms(std::shared_ptr<IUsbCdc> usb) : mUsb(usb) {
     mUsb->RegisterRxCallback([this](uint8_t* data, uint16_t len) {
@@ -24,7 +23,7 @@ void Comms::OnBytesReceived(uint8_t* data, uint16_t len) {
             mCommandFinish = true;
             break;
         }
-        if(mRawCommandLength >= mMaxRawCommandLength) {
+        if(mRawCommandLength >= kMaxRawCommandLength) {
             mRawCommandLength = 0;
             break;
         }

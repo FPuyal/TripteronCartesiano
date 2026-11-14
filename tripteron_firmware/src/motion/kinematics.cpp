@@ -1,60 +1,93 @@
 #include "kinematics.h"
+#include "kinematics_types.h"
+#include <algorithm>
 #include <cmath>
 
-#define DIST    180.0f // Length of the robot arm in mm
-#define GAMMAX  76.9044f  // Offset of alphaX in º
-#define GAMMAY  77.7114f  // Offset of alphaY in º
-#define GAMMAZ  22.5280f  // Offset of alphaZ in º
-#define LY      261.6f  // Distance from Y axis to X arm base in mm
-#define LX      263.6f  // Distance from X axis to Y arm base in mm
-#define DX      85.7f // Distance from X axis to Z arm base in mm
-#define DY      35.5f // Distance from Y axis to Z arm base in mm
-#define L1      40.0f  // Y Offset of X arm in mm
-#define L2      40.0f  // X Offset of Y arm in mm
-#define L3      25.0f  // X Offset of Z arm in mm
+namespace {
+    constexpr float kDist   = 180.0f;    // Longitud del brazo en mm
+    constexpr float kGammaX = 76.391f;
+    constexpr float kGammaY = 76.391f;
+    constexpr float kGammaZ = 23.534f;
+    constexpr float kLY     = 260.600f;
+    constexpr float kLX     = 260.600f;
+    constexpr float kDZ     = 32.900f;
+    constexpr float kDX     = 88.700f;
+    constexpr float kDY     = 36.500f;
+    constexpr float kL1     = 40.000f;
+    constexpr float kL2     = 40.000f;
+    constexpr float kL3     = 25.000f;
 
-#define MAX_ITERATIONS 8
-#define FK_TOL 0.01f
-#define TIME_STEP 0.001f // Time step in seconds
+    constexpr int   kMaxIterations = 8;
+    constexpr float kFkTol         = 1.0f;
+    constexpr float kTimeStep      = 0.001f;
 
-void Kinematics::CaptureHome() {
-    if (!mXEncoder->SetOffset()) return;
-    if (!mYEncoder->SetOffset()) return;
-    if (!mZEncoder->SetOffset()) return;
-    HAL_Delay(2);
-
-    CalculateKinematics();
-    mHome[0] = mPreviousState.pos[0];
-    mHome[1] = mPreviousState.pos[1];
-    mHome[2] = mPreviousState.pos[2];
+    constexpr float kDegToRad = 0.01745329252f;
 }
 
-void Kinematics::Update() {
-    if(mUpdateKinematics) {
-        mUpdateKinematics = false;
-        CalculateKinematics();
+bool Kinematics::CaptureHome() {
+    if (!mXEncoder->SetOffset()) return false;
+    if (!mYEncoder->SetOffset()) return false;
+    if (!mZEncoder->SetOffset()) return false;
+
+    if(CalculateKinematics() == KinematicsResult::OK) {
+        mHome = mPreviousPositions[0];
+        mPreviousPositions.fill(mHome);
+        return true;
     }
+    return false;
 }
 
-void Kinematics::CalculateKinematics() {
+void Kinematics::RequestUpdate() {
+    if(!mEnabled)
+        return; // Cinemática deshabilitada, no se actualiza.
 
+    if(!mXEncoder->RequestUpdate() || !mYEncoder->RequestUpdate() || !mZEncoder->RequestUpdate())
+        mError = true; // La lectura no se pudo iniciar o ha fallado la útlima lectura realizada.
+}
+
+bool Kinematics::Update() {
+    // Tal vez esto sea redundnate.
+    if(!mEnabled)
+        return true; // Cinemática deshabilitada, no se actualiza.
+
+    if(mError)
+        return false; // Error en la lectura de los encoders. No se puede actualizar la cinemática.
+
+    if(!mXEncoder->IsDataReady() || !mYEncoder->IsDataReady() || !mZEncoder->IsDataReady())
+        return true; // No hay datos nuevos de los encoders. No se puede actualizar la cinemática.
+
+    return CalculateKinematics() == KinematicsResult::OK;
+}
+
+void Kinematics::Reset() {
+    mError = false;
+    mCurrentState = {};
+    mHome = {};
+    mPreviousPositions.fill({});
+
+    mXEncoder->Reset();
+    mYEncoder->Reset();
+    mZEncoder->Reset();
+}
+
+KinematicsResult Kinematics::CalculateKinematics() {
     float alphaX = 0.0f, alphaY = 0.0f, alphaZ = 0.0f;
-    if (!mXEncoder->ReadAngle(alphaX)) return;
-    if (!mYEncoder->ReadAngle(alphaY)) return;
-    if (!mZEncoder->ReadAngle(alphaZ)) return;
+
+    if(!mXEncoder->ReadAngle(alphaX) || !mYEncoder->ReadAngle(alphaY) || !mZEncoder->ReadAngle(alphaZ))
+        return KinematicsResult::NoData;
 
     auto lawOfCosines = [&](float a_deg){
-        const float a = a_deg * 0.01745329252f; // deg→rad
-        return 2*DIST*DIST*(1 - cosf(a));
+        const float a = a_deg * kDegToRad; // deg→rad
+        return 2*kDist*kDist*(1 - cosf(a));
     };
 
-    const float A = lawOfCosines(alphaX + GAMMAX);
-    const float B = lawOfCosines(alphaY + GAMMAY);
-    const float C = lawOfCosines(alphaZ + GAMMAZ);
-    const float P = LY - L1;
-    const float Q = LX - L2;
-    const float R = DX - L3;
-    const float S = DY;
+    const float A = lawOfCosines(alphaX + kGammaX);
+    const float B = lawOfCosines(alphaY + kGammaY);
+    const float C = lawOfCosines(alphaZ + kGammaZ);
+    const float P = kLY - kL1;
+    const float Q = kLX - kL2;
+    const float R = kDX - kL3;
+    const float S = kDY;
 
     // Reduccion a una ecuacion escalar en w = z^2:
     //   x(w) = Q - sqrt(B - w)      dx/dw = 1 / (2*sqrt(B - w))
@@ -82,18 +115,17 @@ void Kinematics::CalculateKinematics() {
     evalG(lo, gLo, dg);
     evalG(hi, gHi, dg);
     if (gLo * gHi > 0.0f)
-        return; // sin raiz en el bracket -> lecturas de encoder inconsistentes
-
+        return KinematicsResult::NoSolution; // sin raiz en el bracket -> lecturas de encoder inconsistentes
     // Warm start: w del ciclo anterior, saturado al bracket
-    float w = mPreviousState.pos[2] * mPreviousState.pos[2];
+    float w = mPreviousPositions[0].z * mPreviousPositions[0].z;
     if (w < lo) w = lo;
     if (w > hi) w = hi;
 
     bool converged = false;
-    for(int i = 0; i < MAX_ITERATIONS; i++) {
+    for(int i = 0; i < kMaxIterations; i++) {
         float g;
         evalG(w, g, dg);
-        if (fabsf(g) < FK_TOL) {
+        if (fabsf(g) < kFkTol) {
             converged = true;
             break;
         }
@@ -118,22 +150,24 @@ void Kinematics::CalculateKinematics() {
     }
 
     if(!converged)
-        return;
+        return KinematicsResult::NoSolution;
 
     const float z = sqrtf(fmaxf(w, 0.0f));
 
     // salida restada (cosmético)
-    mCurrentState.pos[0] = x - mHome[0];
-    mCurrentState.pos[1] = y - mHome[1];
-    mCurrentState.pos[2] = z - mHome[2];
-    mCurrentState.vel[0] = (x - mPreviousState.pos[0]) / TIME_STEP;
-    mCurrentState.vel[1] = (y - mPreviousState.pos[1]) / TIME_STEP;
-    mCurrentState.vel[2] = (z - mPreviousState.pos[2]) / TIME_STEP;
+    mCurrentState.pos.x = x - mHome.x;
+    mCurrentState.pos.y = y - mHome.y;
+    mCurrentState.pos.z = z - mHome.z;
 
-    // semilla Newton: pose CRUDA
-    mPreviousState.pos[0] = x;
-    mPreviousState.pos[1] = y;
-    mPreviousState.pos[2] = z;
+    const MotionData oldPos = mPreviousPositions.back();
+    std::copy_backward(mPreviousPositions.begin(), mPreviousPositions.end() - 1, mPreviousPositions.end());
+    mPreviousPositions[0] = {x, y, z};
+
+    mCurrentState.vel.x = (x - oldPos.x) / (kVelTimeLapse * kTimeStep);
+    mCurrentState.vel.y = (y - oldPos.y) / (kVelTimeLapse * kTimeStep);
+    mCurrentState.vel.z = (z - oldPos.z) / (kVelTimeLapse * kTimeStep);
+
+    return KinematicsResult::OK;
 }
 
 std::shared_ptr<IKinematics> MakeIKinematics(std::shared_ptr<IEncoder> xEncoder, std::shared_ptr<IEncoder> yEncoder, std::shared_ptr<IEncoder> zEncoder){

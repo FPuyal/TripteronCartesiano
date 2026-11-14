@@ -1,18 +1,10 @@
 #pragma once
 
-struct MotionData {
-    float x;
-    float y;
-    float z;
-};
+#include "motion_types.h"
 
-inline MotionData operator*(const MotionData& a, const MotionData& b) {
-    MotionData result = a;
-    result.x *= b.x;
-    result.y *= b.y;
-    result.z *= b.z;
-    return result;
-}
+#include <cstdint>
+
+inline constexpr uint16_t kMaxSegments = 20;
 
 struct MotionConfig {
     MotionData posMax;

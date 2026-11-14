@@ -1,31 +1,70 @@
 #include "encoder.h"
+
+#include "stm32f4xx_hal.h"
 #include <cstdint>
 #include <memory>
 
-#define AS5600_RAW_ANGLE 0x0C
+static constexpr uint8_t kAS5600RawAngle = 0x0C;
 
-bool Encoder::SetOffset(){
-    uint16_t init_raw_angle;
+Encoder::Encoder(std::shared_ptr<II2CWrapper> i2cWrapper) : mI2cWrapper(i2cWrapper) {
+    ConfigEncoder();
 
-    mI2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
-    if(!mI2cWrapper->Read(init_raw_angle))
+    mI2cWrapper->SetReadCallback([this](uint16_t raw_value) {
+        mRawValue = raw_value;
+        mReadPending = false;
+        mDataReady = true;
+    });
+
+    mI2cWrapper->SetErrorCallback([this]() {
+
+    });
+}
+
+bool Encoder::SetOffset() {
+    mDataReady = false;
+    if (!mI2cWrapper->ReadIT())
         return false;
-    mHomeRaw = init_raw_angle;
+
+    uint32_t start = HAL_GetTick();
+    while (!mDataReady) {
+        if (HAL_GetTick() - start > kOffsetTimeoutMs)
+            return false;
+    }
+
+    mHomeRawValue = mRawValue;
     return true;
 }
 
-bool Encoder::ReadAngle(float& angle){
-    uint16_t raw_angle = 0;
+bool Encoder::RequestUpdate() {
+    if(mReadPending)
+        return false; // Error. mReadPending debe ser false al solicitar una nueva lectura. Esto indica que la lectura anterior no se completó.
 
-    mI2cWrapper->SetMemAddress(AS5600_RAW_ANGLE);
-    if(mI2cWrapper->Read(raw_angle)) {
-        int32_t delta = (int32_t)raw_angle - (int32_t)mHomeRaw;
-        delta = (delta + 4096) % 4096;
-        angle = delta * 360.0f / 4096.0f;
-        if(angle > 180.0f) angle -= 360.0f;
-        return true;
-    }
-    return false;
+    mReadPending = mI2cWrapper->ReadIT();
+    return mReadPending; // Devuelve true si la solicitud de lectura se inició correctamente, false si hubo un error.
+}
+
+bool Encoder::ReadAngle(float& angle) {
+    int32_t delta = (int32_t)mRawValue - (int32_t)mHomeRawValue;
+    delta = (delta + 4096) % 4096;
+    angle = delta * 360.0f / 4096.0f;
+    if (angle > 180.0f)
+        angle -= 360.0f;
+
+    mDataReady = false;
+
+    return true;
+}
+
+void Encoder::Reset() {
+    mReadPending = false;
+    mDataReady = false;
+    mRawValue = 0;
+    mHomeRawValue = 0;
+}
+
+void Encoder::ConfigEncoder() {
+    mI2cWrapper->SetMemAddress(kAS5600RawAngle);
+    mConfigured = mI2cWrapper->WriteRegister(0x07, 0x03); // SF 4x 0,030º de ruido con un retraso de 0,55
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {

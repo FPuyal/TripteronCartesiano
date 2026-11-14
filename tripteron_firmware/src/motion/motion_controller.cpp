@@ -1,8 +1,10 @@
 #include "motion_controller.h"
+#include "motion_controller_types.h"
+#include "stm32f407xx.h"
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
+#include <cstdint>
 
 MotionController::MotionController(MotionConfig motionConfig)
         : mMotionConfig(motionConfig) {
@@ -10,16 +12,23 @@ MotionController::MotionController(MotionConfig motionConfig)
 };
 
 bool MotionController::SetSegments(MotionPath path) {
-    delete[] mSegments;
-    mSegments = new SegmentData[path.size]{};
+    if(path.size > kMaxSegments) {
+        mNumSegments = 0;
+        mFinished = true;
+        return false;
+    }
+
     mNumSegments = path.size;
 
     mFinished = false;
 
-    for(int i = 0; i < mNumSegments; i++){
+    for(uint8_t i = 0; i < mNumSegments; i++){
         if(path.segments[i].x > mMotionConfig.posMax.x || path.segments[i].y > mMotionConfig.posMax.y || path.segments[i].z > mMotionConfig.posMax.z ||
-            path.segments[i].x < 0.0f || path.segments[i].y < 0.0f || path.segments[i].z < 0.0f)
-        return false;
+            path.segments[i].x < 0.0f || path.segments[i].y < 0.0f || path.segments[i].z < 0.0f) {
+                mNumSegments = 0;
+                mFinished = true;
+                return false;
+        }
 
         mSegments[i].posTarget = path.segments[i];
     }
@@ -30,8 +39,9 @@ bool MotionController::SetSegments(MotionPath path) {
         return false;
 
     // Geometría + límites de velocidad/aceleración propios de cada segmento (una sola vez).
+    mPathInit = mPosition;
     MotionData ref = mPosition;
-    for(std::size_t i = 0; i < mNumSegments; i++) {
+    for(uint8_t i = 0; i < mNumSegments; i++) {
         SegmentData& segment = mSegments[i];
 
         MotionData d = {segment.posTarget.x - ref.x, segment.posTarget.y - ref.y, segment.posTarget.z - ref.z};
@@ -79,21 +89,48 @@ bool MotionController::SetSegments(MotionPath path) {
     // Look-ahead, pasada hacia adelante: capa por lo que de verdad se puede acelerar
     // desde la velocidad de entrada real en la distancia de cada segmento.
     float initVel = std::sqrt(mVelocity.x*mVelocity.x + mVelocity.y*mVelocity.y + mVelocity.z*mVelocity.z);
-    for(std::size_t i = 0; i < mNumSegments; i++) {
+    for(uint8_t i = 0; i < mNumSegments; i++) {
         SegmentData& segment = mSegments[i];
         const float velAccelLimit = std::sqrt(initVel*initVel + 2.0f * segment.accMaxSeg * segment.dist);
         segment.finalVel = std::min(segment.finalVel, velAccelLimit);
         initVel = segment.finalVel;
     }
 
+    NVIC_DisableIRQ(TIM2_IRQn);
+    mTicksPending = 0;
+    NVIC_EnableIRQ(TIM2_IRQn);
+
     return true;
 }
 
-bool MotionController::Move() {
+void MotionController::Move() {
+    NVIC_DisableIRQ(TIM2_IRQn);
+    const uint8_t pending = mTicksPending;
+    mTicksPending = 0;
+    NVIC_EnableIRQ(TIM2_IRQn);
+
+    for(uint8_t i = 0; i < pending; i++) {
+        UpdateTrajectory();
+        UpdateSegment();
+    }
+}
+
+void MotionController::Reset() {
+    mTrajectoryGenerator->Reset();
+    mNumSegments = 0;
+    mCurrentSegment = 0;
+    mFinished = true;
+    mPosition = {0.0f, 0.0f, 0.0f};
+    mPathInit = {0.0f, 0.0f, 0.0f};
+    mTicksPending = 0;
+    mVelocity = {0.0f, 0.0f, 0.0f};
+}
+
+bool MotionController::UpdateTrajectory() {
     if(!mTrajectoryGenerator->IsFinished())
         return true; // segmento en curso, nada que lanzar todavía
 
-    if(!mSegments || mCurrentSegment >= mNumSegments) {
+    if(mCurrentSegment >= mNumSegments) {
         mFinished = true;
         return false;
     }
@@ -115,31 +152,24 @@ bool MotionController::Move() {
         TrajectoryConfig{segment.velMaxSeg, segment.accMaxSeg});
 }
 
-bool MotionController::Update() {
-    if(!mUpdateMotion)
-        return false;
-
-    mUpdateMotion = false;
-
+bool MotionController::UpdateSegment() {
     if (!mTrajectoryGenerator->Update())
         return false;
 
     const float pathVel = mTrajectoryGenerator->GetVelocity();
     const float pathPos = mTrajectoryGenerator->GetPosition();
 
-    const std::size_t idx = mCurrentSegment - 1; // segmento actualmente en ejecución (mCurrentSegment ya apunta al siguiente)
+    uint8_t currentSegment = mCurrentSegment == 0 ? 0 : (mCurrentSegment - 1); // segmento actualmente en ejecución (mCurrentSegment ya apunta al siguiente)
 
-    MotionData initPos = {0.0f, 0.0f, 0.0f};
-    if(idx != 0)
-        initPos = mSegments[idx-1].posTarget;
+    MotionData initPos = (currentSegment == 0) ? mPathInit : mSegments[currentSegment-1].posTarget;
 
-    mPosition = {initPos.x + pathPos * mSegments[idx].cos.x,
-        initPos.y + pathPos * mSegments[idx].cos.y,
-        initPos.z + pathPos * mSegments[idx].cos.z};
+    mPosition = {initPos.x + pathPos * mSegments[currentSegment].cos.x,
+        initPos.y + pathPos * mSegments[currentSegment].cos.y,
+        initPos.z + pathPos * mSegments[currentSegment].cos.z};
 
-    mVelocity = {pathVel * mSegments[idx].cos.x,
-        pathVel * mSegments[idx].cos.y,
-        pathVel * mSegments[idx].cos.z};
+    mVelocity = {pathVel * mSegments[currentSegment].cos.x,
+        pathVel * mSegments[currentSegment].cos.y,
+        pathVel * mSegments[currentSegment].cos.z};
 
     return true;
 }

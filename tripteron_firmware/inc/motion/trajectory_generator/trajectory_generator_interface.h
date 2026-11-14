@@ -1,6 +1,6 @@
 #pragma once
 
-#include "trajectory_generator_utils.h"
+#include "trajectory_generator_types.h"
 
 #include <memory>
 

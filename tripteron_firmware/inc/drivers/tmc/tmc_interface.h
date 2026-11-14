@@ -5,6 +5,7 @@
 #include "uart_interface.h"
 
 #include <memory>
+#include <cstdint>
 
 class ITmc {
 public:

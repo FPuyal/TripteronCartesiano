@@ -1,9 +1,7 @@
 #pragma once
 
-#include "comms.h"
 #include "gpio_input_interface.h"
 #include "kinematics_interface.h"
-#include "motion_controller.h"
 #include "motion_controller_interface.h"
 #include "robot_interface.h"
 #include "step_engine_interface.h"
@@ -20,36 +18,43 @@ public:
         std::shared_ptr<IGpioInput> endStopX,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
+        std::shared_ptr<IKinematics> kinematics,
         std::shared_ptr<IComms> comms);
 
-    void Run() override {};
-    void Tick() override;
-    void SetCommandRequest(CommandRequest commandRequest) override;
+    void Run() override;
+    void SetCommandRequest(const CommandRequest& commandRequest) override;
+    void RequestTelemetry() override;
     void EmergencyStop() override;
     State GetState() const override { return mState; }
 
 private:
+    bool SendTelemetryData();
     CommandRequest ParseCommand(uint8_t* command, uint16_t size);
 
-    static constexpr uint16_t mMaxSegments = 20;
-
     volatile State mState = State::Init;
-    StateRequest mStateRequest;
-    MotionData mPath[mMaxSegments] = {};
+    volatile StateRequest mStateRequest = StateRequest::None;
+    MotionData mPath[kMaxSegments] = {};
     uint16_t mPathSize = 0;
 
-    static constexpr uint16_t homingTimeoutMs = 10000;
-    static constexpr uint16_t backoffTimeoutMs = 5000;
+    static constexpr uint16_t kHomingTimeoutMs = 10000;
+    static constexpr uint16_t kBackoffTimeoutMs = 5000;
 
     uint32_t mElapsedMs = 0;
     uint32_t mHomingMs = 0;
     uint32_t mBackoffMs = 0;
+
+    uint8_t mTelemetryBuffer[105] {};
+    uint8_t mEndByte = 0xFF;
+    volatile bool mTelemetryFlag = false;
+
+    volatile RobotFailure mFail = RobotFailure::None;
 
     std::shared_ptr<IMotionController> mMotionController;
     std::shared_ptr<IStepEngine> mStepEngine;
     std::shared_ptr<IGpioInput> mEndStopX;
     std::shared_ptr<IGpioInput> mEndStopY;
     std::shared_ptr<IGpioInput> mEndStopZ;
+    std::shared_ptr<IKinematics> mKinematics;
     std::shared_ptr<IComms> mComms;
 };
 
