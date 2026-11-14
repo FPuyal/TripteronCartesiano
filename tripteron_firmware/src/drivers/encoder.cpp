@@ -64,7 +64,7 @@ void Encoder::Reset() {
 
 void Encoder::ConfigEncoder() {
     mI2cWrapper->SetMemAddress(kAS5600RawAngle);
-    mConfigured = mI2cWrapper->WriteRegister(0x07, 0x02);
+    mConfigured = mI2cWrapper->WriteRegister(0x07, 0x03); // SF 4x 0,030º de ruido con un retraso de 0,55
 }
 
 std::shared_ptr<IEncoder> MakeIEncoder(std::shared_ptr<II2CWrapper> i2cWrapper) {
