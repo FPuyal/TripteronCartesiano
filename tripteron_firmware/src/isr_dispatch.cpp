@@ -22,10 +22,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     }
     if(htim->Instance == TIM2) {
         if(motionControllerInstance) motionControllerInstance->RequestUpdate();
-        if(stepEngineInstance) stepEngineInstance->Update();
         if(kinematicsInstance) kinematicsInstance->RequestUpdate();
     }
     if(htim->Instance == TIM3) {
         if(robotInterface) robotInterface->RequestTelemetry();
     }
+}
+
+// Rellenado del buffer de pasos: lo dispara Tick() al cambiar de mitad
+extern "C" void TIM8_UP_TIM13_IRQHandler(void) {
+    if(stepEngineInstance) stepEngineInstance->Update();
 }
