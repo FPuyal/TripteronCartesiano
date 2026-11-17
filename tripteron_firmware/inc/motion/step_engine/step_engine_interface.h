@@ -11,7 +11,6 @@ public:
     virtual void SetXSteps(int16_t x) = 0;
     virtual void SetYSteps(int16_t y) = 0;
     virtual void SetZSteps(int16_t z) = 0;
-    virtual void RequestUpdate() = 0;
     virtual void Update() = 0;
     virtual void Reset() = 0;
     virtual void Tick() = 0;

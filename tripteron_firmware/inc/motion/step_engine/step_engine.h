@@ -13,12 +13,12 @@ public:
     void SetXSteps(int16_t x) override { mSteps[0] = x; }
     void SetYSteps(int16_t y) override { mSteps[1] = y; }
     void SetZSteps(int16_t z) override { mSteps[2] = z; }
-    void RequestUpdate() override { mBufferFlag = true; }
     void Update() override;
     void Reset() override;
     void Tick() override;
 
 private:
+
     std::shared_ptr<ITmc> mXTmc;
     std::shared_ptr<ITmc> mYTmc;
     std::shared_ptr<ITmc> mZTmc;
@@ -29,8 +29,7 @@ private:
     volatile uint16_t mAccumulator[3] = {0, 0, 0};
     volatile uint8_t mPrevDir[3] = {0, 0, 0};
 
-    static constexpr uint8_t kBufferSize = 40;
+    static constexpr uint8_t kBufferSize = 96; // Generación cada 2,5 ms
     volatile uint8_t mBuffer[kBufferSize] = {};
     volatile uint8_t mBufferIndex = 0;
-    volatile bool mBufferFlag = false;
 };
