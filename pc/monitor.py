@@ -87,35 +87,44 @@ def parse_log(text):
 
 
 def plot_log(log_path):
-    """Genera log-<fecha>-MC.png y log-<fecha>-KM.png en pc/graphics/."""
+    """Genera log-<fecha>.png en pc/graphics/: una fila por eje con la posicion
+    teorica (MC) frente a la real (KM) y el error (MC - KM)."""
     with open(log_path, 'r', encoding='ascii', errors='ignore') as f:
         samples = parse_log(f.read())
 
+    ref, real = samples['MC'], samples['KM']
+    n = min(len(ref), len(real))
+    if n == 0:
+        return
+
     os.makedirs(GRAPHICS_DIR, exist_ok=True)
     base = os.path.join(GRAPHICS_DIR, os.path.splitext(os.path.basename(log_path))[0])
-    for tag, rows in samples.items():
-        if not rows:
-            continue
-        t = [i * SAMPLE_PERIOD_S for i in range(len(rows))]
-        cols = list(zip(*rows))
+    t = [i * SAMPLE_PERIOD_S for i in range(n)]
 
-        fig, (ax_pos, ax_vel) = plt.subplots(2, 1, sharex=True, figsize=(10, 7))
-        fig.suptitle(f'[{tag}] {os.path.basename(log_path)}')
-        for i, (axis, color) in enumerate(zip('XYZ', ('tab:red', 'tab:green', 'tab:blue'))):
-            ax_pos.plot(t, cols[i], color=color, label=f'Pos {axis}')
-            ax_vel.plot(t, cols[i + 3], color=color, label=f'Vel {axis}')
-        ax_pos.set_ylabel('Posicion')
-        ax_vel.set_ylabel('Velocidad')
-        ax_vel.set_xlabel('Tiempo (s)')
-        for ax in (ax_pos, ax_vel):
+    fig, axes = plt.subplots(3, 2, sharex=True, figsize=(12, 8))
+    fig.suptitle(os.path.basename(log_path))
+    axes[0][0].set_title('Posicion')
+    axes[0][1].set_title('Error (teorica - real)')
+    for i, axis in enumerate('XYZ'):
+        ax_pos, ax_err = axes[i]
+        pos_ref = [row[i] for row in ref[:n]]
+        pos_real = [row[i] for row in real[:n]]
+        ax_pos.plot(t, pos_ref, '--', color='tab:blue', label='Teorica')
+        ax_pos.plot(t, pos_real, color='tab:orange', label='Real')
+        ax_err.plot(t, [r - m for r, m in zip(pos_ref, pos_real)], color='tab:red', label='Error')
+        ax_pos.set_ylabel(f'{axis} (mm)')
+        ax_err.set_ylabel(f'Error {axis} (mm)')
+        for ax in (ax_pos, ax_err):
             ax.grid(True)
             ax.legend(loc='upper right')
-        fig.tight_layout()
+    for ax in axes[2]:
+        ax.set_xlabel('Tiempo (s)')
+    fig.tight_layout()
 
-        png_path = f'{base}-{tag}.png'
-        fig.savefig(png_path, dpi=120)
-        plt.close(fig)
-        print(f'Grafico -> {png_path}')
+    png_path = f'{base}.png'
+    fig.savefig(png_path, dpi=120)
+    plt.close(fig)
+    print(f'Grafico -> {png_path}')
 
 
 def receiver_loop(ser, stop_event):

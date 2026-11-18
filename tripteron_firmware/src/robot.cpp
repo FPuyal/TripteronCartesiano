@@ -20,20 +20,17 @@ Robot::Robot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
         std::shared_ptr<IKinematics> kinematics,
-        std::shared_ptr<IComms> comms) :
+        std::shared_ptr<IComms> comms,
+        MotionConfig motionConfig) :
+        mMotionConfig(motionConfig),
         mStepEngine(stepEngine),
         mEndStopX(endStopX),
         mEndStopY(endStopY),
         mEndStopZ(endStopZ),
         mKinematics(kinematics),
         mComms(comms) {
-    mMotionController = MakeIMotionController(
-        MotionConfig{
-            {165.0f, 165.0f, 200.0f},
-            {400.0f, 400.0f, 80.0f},
-            {800.0f, 800.0f, 160.0f},
-            0.2f,
-            {20.0f, 20.0f, 25.0f}});
+    mMotionController = MakeIMotionController(mMotionConfig);
+    mPositionController = MakeIPositionController();
     motionControllerInstance = mMotionController.get();
 
     mComms->RegisterCommandCallback([this](uint8_t* data, uint16_t len){
@@ -107,6 +104,7 @@ void Robot::Run(){
                 HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
                 segmentFlag = mMotionController->SetSegments({mPath, mPathSize});
                 HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+                mPositionController->Reset();
             }
 
             if(stateRequest == StateRequest::Home) {
@@ -122,13 +120,20 @@ void Robot::Run(){
 
             mMotionController->Move();
 
-            MotionData steps = mMotionController->GetSteps();
+            const MotionData velCmd = mPositionController->Update(
+                mMotionController->GetPosition(),
+                mMotionController->GetVelocity(),
+                mKinematics->GetCurrentState().pos);
+
+            const MotionData steps = velCmd * mMotionConfig.stepsPerMm;
             mStepEngine->SetSteps(steps.x, steps.y, steps.z);
 
             SendTelemetryData();
 
-            if(mMotionController->IsFinished())
+            if(mMotionController->IsFinished() && mPositionController->IsSettled()) {
+                mStepEngine->SetSteps(0, 0, 0);
                 mComms->SendData(&mEndByte, 1);
+            }
             break;
         }
 
@@ -142,6 +147,7 @@ void Robot::Run(){
                 mFail = RobotFailure::None;
                 mStepEngine->Reset();
                 mMotionController->Reset();
+                mPositionController->Reset();
                 mKinematics->Reset();
             }
             break;
@@ -194,7 +200,7 @@ void Robot::Run(){
             break;
 
         case State::Moving:
-            if(mMotionController->IsFinished()){
+            if(mMotionController->IsFinished() && mPositionController->IsSettled()){
                 mState = State::Idle;
                 if(mStateRequest == stateRequest)
                     mStateRequest = StateRequest::None;
@@ -361,6 +367,7 @@ std::shared_ptr<IRobot> MakeIRobot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
         std::shared_ptr<IKinematics> kinematics,
-        std::shared_ptr<IComms> comms) {
-    return std::make_shared<Robot>(stepEngine, endStopX, endStopY, endStopZ, kinematics, comms);
+        std::shared_ptr<IComms> comms,
+        MotionConfig motionConfig) {
+    return std::make_shared<Robot>(stepEngine, endStopX, endStopY, endStopZ, kinematics, comms, motionConfig);
 }

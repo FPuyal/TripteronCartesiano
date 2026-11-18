@@ -3,6 +3,7 @@
 #include "gpio_input_interface.h"
 #include "kinematics_interface.h"
 #include "motion_controller_interface.h"
+#include "position_controller_interface.h"
 #include "robot_interface.h"
 #include "step_engine_interface.h"
 #include "comms_interface.h"
@@ -19,7 +20,8 @@ public:
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
         std::shared_ptr<IKinematics> kinematics,
-        std::shared_ptr<IComms> comms);
+        std::shared_ptr<IComms> comms,
+        MotionConfig motionConfig);
 
     void Run() override;
     void SetCommandRequest(const CommandRequest& commandRequest) override;
@@ -36,6 +38,8 @@ private:
     MotionData mPath[kMaxSegments] = {};
     uint16_t mPathSize = 0;
 
+    const MotionConfig mMotionConfig;
+
     static constexpr uint16_t kHomingTimeoutMs = 10000;
     static constexpr uint16_t kBackoffTimeoutMs = 5000;
 
@@ -50,6 +54,7 @@ private:
     volatile RobotFailure mFail = RobotFailure::None;
 
     std::shared_ptr<IMotionController> mMotionController;
+    std::shared_ptr<IPositionController> mPositionController;
     std::shared_ptr<IStepEngine> mStepEngine;
     std::shared_ptr<IGpioInput> mEndStopX;
     std::shared_ptr<IGpioInput> mEndStopY;

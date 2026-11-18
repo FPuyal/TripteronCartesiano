@@ -25,4 +25,5 @@ std::shared_ptr<IRobot> MakeIRobot(std::shared_ptr<IStepEngine> stepEngine,
         std::shared_ptr<IGpioInput> endStopY,
         std::shared_ptr<IGpioInput> endStopZ,
         std::shared_ptr<IKinematics> kinematics,
-        std::shared_ptr<IComms> comms);
+        std::shared_ptr<IComms> comms,
+        MotionConfig motionConfig);
